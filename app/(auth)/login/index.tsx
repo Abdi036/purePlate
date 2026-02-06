@@ -1,7 +1,8 @@
 import { Link, useRouter } from "expo-router";
 import React from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FormField } from "../../../components/FormField";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,27 +15,20 @@ export default function LoginPage() {
           Sign in to continue your healthy journey.
         </Text>
 
-        <View className="gap-y-4">
-          <View>
-            <Text className="text-slate-700 font-medium mb-2 ml-1">
-              Email Address
-            </Text>
-            <TextInput
-              placeholder="name@example.com"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+        <View>
+          <FormField
+            label="Email Address"
+            placeholder="name@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
           <View>
-            <Text className="text-slate-700 font-medium mb-2 ml-1">
-              Password
-            </Text>
-            <TextInput
+            <FormField
+              label="Password"
               placeholder="••••••••"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100"
               secureTextEntry
+              className="mb-0" // Override mb-4 since we have a link below
             />
             <Link href="/forgot-password" className="mt-2 self-end">
               <Text className="text-emerald-600 font-medium">
@@ -44,7 +38,7 @@ export default function LoginPage() {
           </View>
 
           <TouchableOpacity
-            className="bg-emerald-500 py-4 rounded-2xl mt-4 shadow-sm"
+            className="bg-emerald-500 py-4 rounded-2xl mt-8 shadow-sm"
             onPress={() => router.replace("/")} // Change to your main route
           >
             <Text className="text-white text-center font-bold text-lg">
