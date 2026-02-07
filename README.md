@@ -16,6 +16,18 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## Appwrite (Signup/Login)
+
+Create a `.env` file (see `.env.example`) and set:
+
+- `EXPO_PUBLIC_APPWRITE_ENDPOINT` (default: `https://cloud.appwrite.io/v1`)
+- `EXPO_PUBLIC_APPWRITE_PROJECT_ID`
+
+Auth screens are wired to Appwrite:
+
+- Signup: `app/(auth)/signup/index.tsx`
+- Login: `app/(auth)/login/index.tsx`
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

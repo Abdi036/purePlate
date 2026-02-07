@@ -1,6 +1,13 @@
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AuthLayout() {
+  const { user, isLoading } = useAuth();
+
+  if (!isLoading && user) {
+    return <Redirect href="/" />;
+  }
+
   return (
     <Stack
       screenOptions={{
@@ -10,10 +17,10 @@ export default function AuthLayout() {
         headerTintColor: "#10b981",
       }}
     >
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="signup" options={{ headerShown: false }} />
-      <Stack.Screen name="forgot-password" />
-      <Stack.Screen name="reset-password" />
+      <Stack.Screen name="login/index" options={{ headerShown: false }} />
+      <Stack.Screen name="signup/index" options={{ headerShown: false }} />
+      <Stack.Screen name="forgot-password/index" />
+      <Stack.Screen name="reset-password/index" />
     </Stack>
   );
 }

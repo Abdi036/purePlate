@@ -1,11 +1,40 @@
 import { Link, useRouter } from "expo-router";
-import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../../components/FormField";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { signIn } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSignIn = async () => {
+    if (isSubmitting) return;
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      Alert.alert("Missing info", "Please enter email and password.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await signIn({ email: trimmedEmail, password });
+      router.replace("/(tabs)/home");
+    } catch (err: any) {
+      const message =
+        typeof err?.message === "string"
+          ? err.message
+          : "Unable to sign in. Please try again.";
+      Alert.alert("Sign in failed", message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -21,6 +50,8 @@ export default function LoginPage() {
             placeholder="name@example.com"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
 
           <View>
@@ -29,6 +60,8 @@ export default function LoginPage() {
               placeholder="••••••••"
               secureTextEntry
               className="mb-0" // Override mb-4 since we have a link below
+              value={password}
+              onChangeText={setPassword}
             />
             <Link href="/forgot-password" className="mt-2 self-end">
               <Text className="text-emerald-600 font-medium">
@@ -39,10 +72,11 @@ export default function LoginPage() {
 
           <TouchableOpacity
             className="bg-emerald-500 py-4 rounded-2xl mt-8 shadow-sm"
-            onPress={() => router.replace("/")} // Change to your main route
+            onPress={handleSignIn}
+            disabled={isSubmitting}
           >
             <Text className="text-white text-center font-bold text-lg">
-              Sign In
+              {isSubmitting ? "Signing In..." : "Sign In"}
             </Text>
           </TouchableOpacity>
         </View>
