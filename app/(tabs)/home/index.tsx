@@ -1,13 +1,183 @@
-import React from "react";
-import { Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { Link } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../../context/AuthContext";
+import {
+  appwriteListFoodsForRestaurant,
+  appwriteListRestaurantsByIds,
+  FoodDoc,
+  Restaurant,
+} from "../../../lib/appwrite";
 
 export default function HomeTab() {
+  const { user, prefs, isLoading } = useAuth();
+  const role = prefs?.role;
+  const scannedIds = prefs?.scannedRestaurantIds ?? [];
+
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isFetchingRestaurants, setIsFetchingRestaurants] = useState(false);
+
+  const [foods, setFoods] = useState<FoodDoc[]>([]);
+  const [isFetchingFoods, setIsFetchingFoods] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (role !== "customer") return;
+    if (scannedIds.length === 0) {
+      setRestaurants([]);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        setIsFetchingRestaurants(true);
+        const result = await appwriteListRestaurantsByIds(scannedIds);
+        if (mounted) setRestaurants(result);
+      } finally {
+        if (mounted) setIsFetchingRestaurants(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isLoading, role, scannedIds]);
+
+  const loadFoods = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsFetchingFoods(true);
+      const result = await appwriteListFoodsForRestaurant({ userId: user.$id });
+      setFoods(result);
+    } finally {
+      setIsFetchingFoods(false);
+    }
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (role !== "restaurant") return;
+      if (!user) return;
+      void loadFoods();
+    }, [loadFoods, role, user]),
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 px-8 pt-12">
         <Text className="text-3xl font-bold text-slate-900">Home</Text>
-        <Text className="text-slate-500 mt-2">You’re signed in.</Text>
+
+        {isLoading ? (
+          <Text className="text-slate-500 mt-2">Loading...</Text>
+        ) : !user ? (
+          <Text className="text-slate-500 mt-2">Not signed in.</Text>
+        ) : role === "customer" ? (
+          <View className="mt-6">
+            {scannedIds.length === 0 ? (
+              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                <Text className="text-slate-900 font-semibold">
+                  Scan a restaurant QR code
+                </Text>
+                <Text className="text-slate-500 mt-2">
+                  You don’t have any restaurants yet.
+                </Text>
+                <Link href="/(tabs)/scan/index" className="mt-4">
+                  <Text className="text-emerald-600 font-bold">Go to Scan</Text>
+                </Link>
+              </View>
+            ) : (
+              <View className="gap-y-3">
+                <Text className="text-slate-700 font-medium">
+                  Your Restaurants
+                </Text>
+
+                {isFetchingRestaurants ? (
+                  <Text className="text-slate-500">Loading restaurants...</Text>
+                ) : restaurants.length > 0 ? (
+                  restaurants.map((r) => (
+                    <View
+                      key={r.$id}
+                      className="bg-slate-50 border border-slate-100 rounded-2xl p-4"
+                    >
+                      <Text className="text-slate-900 font-semibold">
+                        {r.name ?? "Restaurant"}
+                      </Text>
+                      <Text className="text-slate-500 mt-1">ID: {r.$id}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                    <Text className="text-slate-900 font-semibold">
+                      Scanned restaurant IDs
+                    </Text>
+                    <Text className="text-slate-500 mt-2">
+                      Configure Appwrite DB env vars to load names.
+                    </Text>
+                    {scannedIds.map((id) => (
+                      <Text key={id} className="text-slate-700 mt-2">
+                        {id}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        ) : role === "restaurant" ? (
+          <View className="mt-6">
+            <Text className="text-slate-700 font-medium">Your Foods</Text>
+
+            <View className="mt-4 gap-y-3">
+              {isFetchingFoods ? (
+                <Text className="text-slate-500">Loading foods...</Text>
+              ) : foods.length === 0 ? (
+                <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                  <Text className="text-slate-900 font-semibold">
+                    No foods yet
+                  </Text>
+                  <Text className="text-slate-500 mt-2">
+                    Add your first food item.
+                  </Text>
+                </View>
+              ) : (
+                foods.map((f) => (
+                  <View
+                    key={f.$id}
+                    className="bg-slate-50 border border-slate-100 rounded-2xl p-4"
+                  >
+                    <Text className="text-slate-900 font-semibold">
+                      {f.name}
+                    </Text>
+                    <Text className="text-slate-500 mt-1">
+                      {f.cookTimeMinutes} min • ${f.price}
+                    </Text>
+                    <Text className="text-slate-500 mt-1">
+                      Ingredients:{" "}
+                      {Array.isArray(f.ingredients)
+                        ? f.ingredients.join(", ")
+                        : ""}
+                    </Text>
+                  </View>
+                ))
+              )}
+
+              <Link href="/(tabs)/add-food" asChild>
+                <TouchableOpacity className="bg-emerald-500 py-4 rounded-2xl mt-4">
+                  <Text className="text-white text-center font-bold text-lg">
+                    Add Food
+                  </Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          </View>
+        ) : (
+          <Text className="text-slate-500 mt-2">
+            Your role is not set. Please sign up again.
+          </Text>
+        )}
       </View>
     </SafeAreaView>
   );

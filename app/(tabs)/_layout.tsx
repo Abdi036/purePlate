@@ -34,6 +34,14 @@ export default function TabsLayout() {
           title: "Profile",
         }}
       />
+
+      <Tabs.Screen
+        name="add-food/index"
+        options={{
+          href: null,
+          title: "Add Food",
+        }}
+      />
     </Tabs>
   );
 }

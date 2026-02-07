@@ -10,9 +10,13 @@ import React, {
 } from "react";
 import {
   appwriteGetCurrentUser,
+  appwriteGetPrefs,
   appwriteSignIn,
   appwriteSignOut,
   appwriteSignUp,
+  appwriteUpdatePrefs,
+  UserPrefs,
+  UserRole,
 } from "../lib/appwrite";
 
 type User = Models.User<Models.Preferences>;
@@ -21,24 +25,35 @@ type AuthContextValue = {
   user: User | null;
   isLoading: boolean;
   refresh: () => Promise<void>;
+  prefs: UserPrefs | null;
   signIn: (params: { email: string; password: string }) => Promise<User>;
   signUp: (params: {
     name: string;
     email: string;
     password: string;
+    role: UserRole;
   }) => Promise<User>;
   signOut: () => Promise<void>;
+  updatePrefs: (prefs: Partial<UserPrefs>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
+  const [prefs, setPrefs] = useState<UserPrefs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     const currentUser = await appwriteGetCurrentUser();
     setUser(currentUser);
+
+    if (currentUser) {
+      const currentPrefs = await appwriteGetPrefs();
+      setPrefs(currentPrefs);
+    } else {
+      setPrefs(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -62,15 +77,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (params: { email: string; password: string }) => {
       const signedInUser = await appwriteSignIn(params);
       setUser(signedInUser);
+      const currentPrefs = await appwriteGetPrefs();
+      setPrefs(currentPrefs);
       return signedInUser;
     },
     [],
   );
 
   const signUp = useCallback(
-    async (params: { name: string; email: string; password: string }) => {
+    async (params: {
+      name: string;
+      email: string;
+      password: string;
+      role: UserRole;
+    }) => {
       const signedUpUser = await appwriteSignUp(params);
       setUser(signedUpUser);
+      const currentPrefs = await appwriteGetPrefs();
+      setPrefs(currentPrefs);
       return signedUpUser;
     },
     [],
@@ -79,11 +103,32 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const signOut = useCallback(async () => {
     await appwriteSignOut();
     setUser(null);
+    setPrefs(null);
   }, []);
 
+  const updatePrefs = useCallback(
+    async (next: Partial<UserPrefs>) => {
+      const merged = { ...(prefs ?? {}), ...next };
+      const updatedUser = await appwriteUpdatePrefs(merged);
+      setUser(updatedUser);
+      const currentPrefs = await appwriteGetPrefs();
+      setPrefs(currentPrefs);
+    },
+    [prefs],
+  );
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isLoading, refresh, signIn, signUp, signOut }),
-    [user, isLoading, refresh, signIn, signUp, signOut],
+    () => ({
+      user,
+      prefs,
+      isLoading,
+      refresh,
+      signIn,
+      signUp,
+      signOut,
+      updatePrefs,
+    }),
+    [user, prefs, isLoading, refresh, signIn, signUp, signOut, updatePrefs],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

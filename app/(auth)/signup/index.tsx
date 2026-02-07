@@ -27,7 +27,7 @@ export default function SignupPage() {
 
     try {
       setIsSubmitting(true);
-      await signUp({ name: trimmedName, email: trimmedEmail, password });
+      await signUp({ name: trimmedName, email: trimmedEmail, password, role });
       router.replace("/(tabs)/home");
     } catch (err: any) {
       const message =
