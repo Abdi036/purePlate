@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow PurePlate to use the camera to scan restaurant QR codes."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +30,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-camera",
       [
         "expo-image-picker",
         {

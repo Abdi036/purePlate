@@ -52,7 +52,21 @@ export async function appwriteSignUp(params: {
     });
   }
 
-  return account.get();
+  const current = await account.get();
+  if (role === "restaurant") {
+    try {
+      await appwriteUpsertRestaurant({
+        userId: current.$id,
+        name: current.name,
+      });
+    } catch (err: any) {
+      console.warn(
+        "Unable to create restaurant profile:",
+        typeof err?.message === "string" ? err.message : err,
+      );
+    }
+  }
+  return current;
 }
 
 export async function appwriteSignIn(params: {
@@ -102,6 +116,59 @@ function normalizeIdsKey(ids: string[]): string {
   return ids.filter(Boolean).slice().sort().join(",");
 }
 
+export async function appwriteUpsertRestaurant(params: {
+  userId: string;
+  name?: string;
+}): Promise<void> {
+  if (!databaseId || !restaurantsCollectionId) return;
+
+  const { userId, name } = params;
+  if (!userId) return;
+
+  const nextName = typeof name === "string" ? name.trim() : "";
+
+  try {
+    const existing = await databases.getDocument<Restaurant>(
+      databaseId,
+      restaurantsCollectionId,
+      userId,
+    );
+
+    const existingName =
+      typeof existing?.name === "string" ? existing.name : "";
+    if (nextName && nextName !== existingName) {
+      await databases.updateDocument<Restaurant>(
+        databaseId,
+        restaurantsCollectionId,
+        userId,
+        { name: nextName },
+      );
+    }
+  } catch (err: any) {
+    const code = typeof err?.code === "number" ? err.code : undefined;
+    const message = typeof err?.message === "string" ? err.message : "";
+    if (code !== 404 && !message.toLowerCase().includes("not found")) {
+      throw err;
+    }
+
+    try {
+      await databases.createDocument<Restaurant>(
+        databaseId,
+        restaurantsCollectionId,
+        userId,
+        { name: nextName },
+      );
+    } catch (createErr: any) {
+      const createCode =
+        typeof createErr?.code === "number" ? createErr.code : undefined;
+      if (createCode === 409) return;
+      throw createErr;
+    }
+  } finally {
+    restaurantsByIdsCache.clear();
+  }
+}
+
 export function appwritePeekRestaurantsByIds(
   ids: string[],
 ): Restaurant[] | undefined {
@@ -124,7 +191,9 @@ export async function appwriteListRestaurantsByIds(
     [Query.equal("$id", ids)],
   );
   const docs = result.documents;
-  restaurantsByIdsCache.set(cacheKey, docs, RESTAURANTS_BY_IDS_TTL_MS);
+  if (docs.length > 0) {
+    restaurantsByIdsCache.set(cacheKey, docs, RESTAURANTS_BY_IDS_TTL_MS);
+  }
   return docs;
 }
 

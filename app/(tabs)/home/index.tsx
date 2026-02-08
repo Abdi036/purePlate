@@ -122,15 +122,21 @@ export default function HomeTab() {
                   <Text className="text-slate-500">Loading restaurants...</Text>
                 ) : restaurants.length > 0 ? (
                   restaurants.map((r) => (
-                    <View
+                    <Link
                       key={r.$id}
-                      className="bg-slate-50 border border-slate-100 rounded-2xl p-4"
+                      href={{
+                        pathname:
+                          "/(tabs)/home/restaurant/[restaurantId]" as any,
+                        params: { restaurantId: r.$id },
+                      }}
+                      asChild
                     >
-                      <Text className="text-slate-900 font-semibold">
-                        {r.name ?? "Restaurant"}
-                      </Text>
-                      <Text className="text-slate-500 mt-1">ID: {r.$id}</Text>
-                    </View>
+                      <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                        <Text className="text-slate-900 font-semibold">
+                          {r.name || r.$id}
+                        </Text>
+                      </TouchableOpacity>
+                    </Link>
                   ))
                 ) : (
                   <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
@@ -141,9 +147,19 @@ export default function HomeTab() {
                       Configure Appwrite DB env vars to load names.
                     </Text>
                     {scannedIds.map((id) => (
-                      <Text key={id} className="text-slate-700 mt-2">
-                        {id}
-                      </Text>
+                      <Link
+                        key={id}
+                        href={{
+                          pathname:
+                            "/(tabs)/home/restaurant/[restaurantId]" as any,
+                          params: { restaurantId: id },
+                        }}
+                        asChild
+                      >
+                        <TouchableOpacity className="mt-3">
+                          <Text className="text-slate-700">{id}</Text>
+                        </TouchableOpacity>
+                      </Link>
                     ))}
                   </View>
                 )}

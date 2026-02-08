@@ -15,6 +15,7 @@ import {
   appwriteSignOut,
   appwriteSignUp,
   appwriteUpdatePrefs,
+  appwriteUpsertRestaurant,
   UserPrefs,
   UserRole,
 } from "../lib/appwrite";
@@ -51,6 +52,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (currentUser) {
       const currentPrefs = await appwriteGetPrefs();
       setPrefs(currentPrefs);
+
+      if (currentPrefs?.role === "restaurant") {
+        try {
+          await appwriteUpsertRestaurant({
+            userId: currentUser.$id,
+            name: currentUser.name,
+          });
+        } catch (err: any) {
+          console.warn(
+            "Unable to sync restaurant profile:",
+            typeof err?.message === "string" ? err.message : err,
+          );
+        }
+      }
     } else {
       setPrefs(null);
     }
