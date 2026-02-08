@@ -96,31 +96,31 @@ export default function RestaurantDetailScreen() {
   const restaurantName = restaurant?.name || "Restaurant";
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
         className="flex-1"
         contentContainerClassName="px-8 pt-12 pb-10"
       >
         <Link href="/(tabs)/home" className="mb-4">
-          <Text className="text-emerald-600 font-bold">Back</Text>
+          <Text className="text-emerald-300 font-extrabold">Back</Text>
         </Link>
 
-        <Text className="text-3xl font-bold text-slate-900">
+        <Text className="text-3xl font-extrabold tracking-tight text-white">
           {restaurantName}
         </Text>
 
         {isLoading ? (
-          <Text className="text-slate-500 mt-2">Loading...</Text>
+          <Text className="text-white/60 mt-2">Loading...</Text>
         ) : errorMessage ? (
-          <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-4">
-            <Text className="text-slate-900 font-semibold">Unable to open</Text>
-            <Text className="text-slate-500 mt-2">{errorMessage}</Text>
+          <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-4">
+            <Text className="text-white/90 font-semibold">Unable to open</Text>
+            <Text className="text-white/60 mt-2">{errorMessage}</Text>
           </View>
         ) : foods.length === 0 ? (
-          <Text className="text-slate-500 mt-2">No foods yet.</Text>
+          <Text className="text-white/60 mt-2">No foods yet.</Text>
         ) : (
           <View className="mt-6 gap-y-3">
-            <Text className="text-slate-700 font-medium">Foods</Text>
+            <Text className="text-white/70 font-medium">Foods</Text>
 
             {foods.map((f) => {
               const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
@@ -136,10 +136,10 @@ export default function RestaurantDetailScreen() {
                   asChild
                 >
                   <TouchableOpacity
-                    className={`bg-slate-50 border border-slate-100 rounded-2xl p-4 ${isUnavailable ? "opacity-50" : ""}`}
+                    className={`bg-white/5 border border-white/10 rounded-3xl p-5 ${isUnavailable ? "opacity-50" : ""}`}
                   >
                     <View className="flex-row items-center">
-                      <View className="w-14 h-14 rounded-full overflow-hidden bg-slate-200">
+                      <View className="w-14 h-14 rounded-full overflow-hidden bg-white/10">
                         {imageUrl ? (
                           <Image
                             source={{ uri: imageUrl }}
@@ -150,14 +150,14 @@ export default function RestaurantDetailScreen() {
                       </View>
 
                       <View className="flex-1 ml-4">
-                        <Text className="text-slate-900 font-semibold">
+                        <Text className="text-white/90 font-semibold">
                           {f.name}
                         </Text>
-                        <Text className="text-slate-500 mt-1">
+                        <Text className="text-white/60 mt-1">
                           {f.cookTimeMinutes} min • ${f.price}
                         </Text>
                         {isUnavailable ? (
-                          <Text className="text-slate-500 mt-1">
+                          <Text className="text-white/60 mt-1">
                             Finished for now
                           </Text>
                         ) : null}

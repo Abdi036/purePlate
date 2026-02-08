@@ -270,27 +270,27 @@ export default function FoodDetailScreen() {
   }, [food]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
         className="flex-1"
         contentContainerClassName="px-8 pt-12 pb-10"
       >
         <Link href="/(tabs)/home" className="mb-4">
-          <Text className="text-emerald-600 font-bold">Back</Text>
+          <Text className="text-emerald-300 font-extrabold">Back</Text>
         </Link>
 
         {isLoading ? (
-          <Text className="text-slate-500 mt-2">Loading...</Text>
+          <Text className="text-white/60 mt-2">Loading...</Text>
         ) : errorMessage ? (
-          <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-2">
-            <Text className="text-slate-900 font-semibold">Unable to open</Text>
-            <Text className="text-slate-500 mt-2">{errorMessage}</Text>
+          <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-2">
+            <Text className="text-white/90 font-semibold">Unable to open</Text>
+            <Text className="text-white/60 mt-2">{errorMessage}</Text>
           </View>
         ) : !food ? (
-          <Text className="text-slate-500 mt-2">Food not found.</Text>
+          <Text className="text-white/60 mt-2">Food not found.</Text>
         ) : (
           <View>
-            <View className="w-full h-56 rounded-2xl overflow-hidden bg-slate-200">
+            <View className="w-full h-56 rounded-3xl overflow-hidden bg-white/10 border border-white/10">
               {imageUrl ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -301,7 +301,7 @@ export default function FoodDetailScreen() {
             </View>
 
             <View className="flex-row items-center justify-between mt-6">
-              <Text className="text-3xl font-bold text-slate-900 flex-1">
+              <Text className="text-3xl font-extrabold tracking-tight text-white flex-1">
                 {food.name}
               </Text>
 
@@ -314,14 +314,14 @@ export default function FoodDetailScreen() {
                         onPress={() => void saveEdits()}
                         disabled={isMutating}
                       >
-                        <Ionicons name="checkmark" size={22} />
+                        <Ionicons name="checkmark" size={22} color="rgba(255,255,255,0.9)" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         className="p-2"
                         onPress={cancelEdit}
                         disabled={isMutating}
                       >
-                        <Ionicons name="close" size={22} />
+                        <Ionicons name="close" size={22} color="rgba(255,255,255,0.9)" />
                       </TouchableOpacity>
                     </>
                   ) : (
@@ -331,14 +331,14 @@ export default function FoodDetailScreen() {
                         onPress={() => setIsEditing(true)}
                         disabled={isMutating}
                       >
-                        <Ionicons name="pencil" size={20} />
+                        <Ionicons name="pencil" size={20} color="rgba(255,255,255,0.9)" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         className="p-2"
                         onPress={() => void deleteFood()}
                         disabled={isMutating}
                       >
-                        <Ionicons name="trash" size={20} />
+                        <Ionicons name="trash" size={20} color="rgba(255,255,255,0.9)" />
                       </TouchableOpacity>
                     </>
                   )}
@@ -346,18 +346,18 @@ export default function FoodDetailScreen() {
               ) : null}
             </View>
 
-            <Text className="text-slate-500 mt-2">
+            <Text className="text-white/60 mt-2">
               {food.cookTimeMinutes} min • ${food.price}
             </Text>
 
             {canManageFood ? (
-              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-6">
+              <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 pr-4">
-                    <Text className="text-slate-900 font-semibold">
+                    <Text className="text-white/90 font-semibold">
                       Availability
                     </Text>
-                    <Text className="text-slate-500 mt-1">
+                    <Text className="text-white/60 mt-1">
                       {editAvailable ? "Available" : "Finished for now"}
                     </Text>
                   </View>
@@ -370,11 +370,11 @@ export default function FoodDetailScreen() {
                 </View>
               </View>
             ) : food.available === false ? (
-              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-6">
-                <Text className="text-slate-900 font-semibold">
+              <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
+                <Text className="text-white/90 font-semibold">
                   Finished for now
                 </Text>
-                <Text className="text-slate-500 mt-2">
+                <Text className="text-white/60 mt-2">
                   This food is currently unavailable.
                 </Text>
               </View>
@@ -383,26 +383,26 @@ export default function FoodDetailScreen() {
             {isEditing ? (
               <View className="mt-6 gap-y-3">
                 <View>
-                  <Text className="text-slate-700 font-medium mb-2 ml-1">
+                  <Text className="text-white/70 font-medium mb-2 ml-1">
                     Name
                   </Text>
                   <TextInput
                     placeholder="Food name"
                     placeholderTextColor="#94a3b8"
-                    className="bg-white p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+                    className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
                     value={editName}
                     onChangeText={setEditName}
                   />
                 </View>
 
                 <View>
-                  <Text className="text-slate-700 font-medium mb-2 ml-1">
+                  <Text className="text-white/70 font-medium mb-2 ml-1">
                     Ingredients (comma-separated)
                   </Text>
                   <TextInput
                     placeholder="e.g. chicken, salt, garlic"
                     placeholderTextColor="#94a3b8"
-                    className="bg-white p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+                    className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
                     value={editIngredientsText}
                     onChangeText={setEditIngredientsText}
                   />
@@ -410,28 +410,28 @@ export default function FoodDetailScreen() {
 
                 <View className="flex-row gap-x-3">
                   <View className="flex-1">
-                    <Text className="text-slate-700 font-medium mb-2 ml-1">
+                    <Text className="text-white/70 font-medium mb-2 ml-1">
                       Cook time (min)
                     </Text>
                     <TextInput
                       placeholder="e.g. 25"
                       keyboardType="numeric"
                       placeholderTextColor="#94a3b8"
-                      className="bg-white p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+                      className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
                       value={editCookTimeMinutes}
                       onChangeText={setEditCookTimeMinutes}
                     />
                   </View>
 
                   <View className="flex-1">
-                    <Text className="text-slate-700 font-medium mb-2 ml-1">
+                    <Text className="text-white/70 font-medium mb-2 ml-1">
                       Price
                     </Text>
                     <TextInput
                       placeholder="e.g. 12.99"
                       keyboardType="numeric"
                       placeholderTextColor="#94a3b8"
-                      className="bg-white p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+                      className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
                       value={editPrice}
                       onChangeText={setEditPrice}
                     />
@@ -440,9 +440,9 @@ export default function FoodDetailScreen() {
               </View>
             ) : null}
 
-            <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-6">
-              <Text className="text-slate-900 font-semibold">Ingredients</Text>
-              <Text className="text-slate-500 mt-2">
+            <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
+              <Text className="text-white/90 font-semibold">Ingredients</Text>
+              <Text className="text-white/60 mt-2">
                 {Array.isArray(food.ingredients) && food.ingredients.length > 0
                   ? food.ingredients.join(", ")
                   : "No ingredients listed."}

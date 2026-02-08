@@ -91,14 +91,14 @@ export default function HomeTab() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-950">
       {role === "restaurant" ? (
         <Link href="/(tabs)/add-food" asChild>
           <TouchableOpacity
             className="absolute z-10 bg-emerald-500 w-14 h-14 rounded-full items-center justify-center"
             style={{ top: 80, right: 28 }}
           >
-            <Text className="text-white text-3xl font-bold">+</Text>
+            <Text className="text-slate-950 text-3xl font-bold">+</Text>
           </TouchableOpacity>
         </Link>
       ) : null}
@@ -107,34 +107,38 @@ export default function HomeTab() {
         className="flex-1"
         contentContainerClassName="px-8 pt-12 pb-10"
       >
-        <Text className="text-3xl font-bold text-slate-900">Home</Text>
+        <Text className="text-3xl font-extrabold tracking-tight text-white">
+          Home
+        </Text>
 
         {isLoading ? (
-          <Text className="text-slate-500 mt-2">Loading...</Text>
+          <Text className="text-white/60 mt-2">Loading...</Text>
         ) : !user ? (
-          <Text className="text-slate-500 mt-2">Not signed in.</Text>
+          <Text className="text-white/60 mt-2">Not signed in.</Text>
         ) : role === "customer" ? (
           <View className="mt-6">
             {scannedIds.length === 0 ? (
-              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                <Text className="text-slate-900 font-semibold">
+              <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                <Text className="text-white/90 font-semibold">
                   Scan a restaurant QR code
                 </Text>
-                <Text className="text-slate-500 mt-2">
+                <Text className="text-white/60 mt-2">
                   You don’t have any restaurants yet.
                 </Text>
                 <Link href="/(tabs)/scan" className="mt-4">
-                  <Text className="text-emerald-600 font-bold">Go to Scan</Text>
+                  <Text className="text-emerald-300 font-extrabold">
+                    Go to Scan
+                  </Text>
                 </Link>
               </View>
             ) : (
               <View className="gap-y-3">
-                <Text className="text-slate-700 font-medium">
+                <Text className="text-white/70 font-medium">
                   Your Restaurants
                 </Text>
 
                 {isFetchingRestaurants ? (
-                  <Text className="text-slate-500">Loading restaurants...</Text>
+                  <Text className="text-white/60">Loading restaurants...</Text>
                 ) : restaurants.length > 0 ? (
                   restaurants.map((r) => (
                     <Link
@@ -146,19 +150,19 @@ export default function HomeTab() {
                       }}
                       asChild
                     >
-                      <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                        <Text className="text-slate-900 font-semibold">
+                      <TouchableOpacity className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                        <Text className="text-white/90 font-semibold">
                           {r.name || r.$id}
                         </Text>
                       </TouchableOpacity>
                     </Link>
                   ))
                 ) : (
-                  <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                    <Text className="text-slate-900 font-semibold">
+                  <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                    <Text className="text-white/90 font-semibold">
                       Scanned restaurant IDs
                     </Text>
-                    <Text className="text-slate-500 mt-2">
+                    <Text className="text-white/60 mt-2">
                       Configure Appwrite DB env vars to load names.
                     </Text>
                     {scannedIds.map((id) => (
@@ -172,7 +176,7 @@ export default function HomeTab() {
                         asChild
                       >
                         <TouchableOpacity className="mt-3">
-                          <Text className="text-slate-700">{id}</Text>
+                          <Text className="text-white/70">{id}</Text>
                         </TouchableOpacity>
                       </Link>
                     ))}
@@ -183,17 +187,17 @@ export default function HomeTab() {
           </View>
         ) : role === "restaurant" ? (
           <View className="mt-6">
-            <Text className="text-slate-700 font-medium">Your Foods</Text>
+            <Text className="text-white/70 font-medium">Your Foods</Text>
 
             <View className="mt-4 gap-y-3">
               {isFetchingFoods ? (
-                <Text className="text-slate-500">Loading foods...</Text>
+                <Text className="text-white/60">Loading foods...</Text>
               ) : foods.length === 0 ? (
-                <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                  <Text className="text-slate-900 font-semibold">
+                <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                  <Text className="text-white/90 font-semibold">
                     No foods yet
                   </Text>
-                  <Text className="text-slate-500 mt-2">
+                  <Text className="text-white/60 mt-2">
                     Add your first food item.
                   </Text>
                 </View>
@@ -205,11 +209,11 @@ export default function HomeTab() {
                   return (
                     <View
                       key={f.$id}
-                      className={`bg-slate-50 border border-slate-100 rounded-2xl p-4 ${isUnavailable ? "opacity-50" : ""}`}
+                      className={`bg-white/5 border border-white/10 rounded-3xl p-5 ${isUnavailable ? "opacity-50" : ""}`}
                     >
                       <View className="flex-row items-center">
                         <TouchableOpacity
-                          className="w-14 h-14 rounded-full overflow-hidden bg-slate-200"
+                          className="w-14 h-14 rounded-full overflow-hidden bg-white/10"
                           onPress={() => {
                             router.push({
                               pathname: "/(tabs)/home/[foodId]" as any,
@@ -235,19 +239,19 @@ export default function HomeTab() {
                             });
                           }}
                         >
-                          <Text className="text-slate-900 font-semibold">
+                          <Text className="text-white/90 font-semibold">
                             {f.name}
                           </Text>
-                          <Text className="text-slate-500 mt-1">
+                          <Text className="text-white/60 mt-1">
                             {f.cookTimeMinutes} min • ${f.price}
                           </Text>
                           {isUnavailable ? (
-                            <Text className="text-slate-500 mt-1">
+                            <Text className="text-white/60 mt-1">
                               Finished for now
                             </Text>
                           ) : null}
                           <Text
-                            className="text-slate-500 mt-1"
+                            className="text-white/60 mt-1"
                             numberOfLines={1}
                           >
                             Ingredients:{" "}
@@ -272,7 +276,7 @@ export default function HomeTab() {
             </View>
           </View>
         ) : (
-          <Text className="text-slate-500 mt-2">
+          <Text className="text-white/60 mt-2">
             Your role is not set. Please sign up again.
           </Text>
         )}

@@ -2,7 +2,7 @@ import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
 // 1. Import the icon set (Ionicons is great for a standard look)
-import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabsLayout() {
   const { user, isLoading } = useAuth();
@@ -16,7 +16,12 @@ export default function TabsLayout() {
       initialRouteName="home"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#007AFF', // Optional: colors the active tab
+        tabBarActiveTintColor: "#34d399",
+        tabBarInactiveTintColor: "rgba(255,255,255,0.55)",
+        tabBarStyle: {
+          backgroundColor: "#020617",
+          borderTopColor: "rgba(255,255,255,0.08)",
+        },
       }}
     >
       <Tabs.Screen

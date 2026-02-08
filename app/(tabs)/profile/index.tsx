@@ -33,7 +33,7 @@ export default function ProfileTab() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -42,29 +42,31 @@ export default function ProfileTab() {
           paddingBottom: 32,
         }}
       >
-        <Text className="text-3xl font-bold text-slate-900">Profile</Text>
+        <Text className="text-3xl font-extrabold tracking-tight text-white">
+          Profile
+        </Text>
 
         {isLoading ? (
-          <Text className="text-slate-500 mt-2">Loading...</Text>
+          <Text className="text-white/60 mt-2">Loading...</Text>
         ) : !user ? (
-          <Text className="text-slate-500 mt-2">Not signed in.</Text>
+          <Text className="text-white/60 mt-2">Not signed in.</Text>
         ) : (
           <View className="mt-6 gap-y-3">
-            <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <Text className="text-slate-700 font-medium">Name</Text>
-              <Text className="text-slate-900 mt-1">{user.name}</Text>
+            <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+              <Text className="text-white/70 font-medium">Name</Text>
+              <Text className="text-white/90 mt-1">{user.name}</Text>
             </View>
 
-            <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <Text className="text-slate-700 font-medium">Email</Text>
-              <Text className="text-slate-900 mt-1">
+            <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+              <Text className="text-white/70 font-medium">Email</Text>
+              <Text className="text-white/90 mt-1">
                 {email || "(not available)"}
               </Text>
             </View>
 
-            <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <Text className="text-slate-700 font-medium">Role</Text>
-              <Text className="text-slate-900 mt-1">
+            <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+              <Text className="text-white/70 font-medium">Role</Text>
+              <Text className="text-white/90 mt-1">
                 {prefs?.role ?? "(not set)"}
               </Text>
             </View>
@@ -73,8 +75,9 @@ export default function ProfileTab() {
               className="bg-emerald-500 py-4 rounded-2xl mt-6"
               onPress={handleSignOut}
               disabled={isSigningOut}
+              activeOpacity={0.85}
             >
-              <Text className="text-white text-center font-bold text-lg">
+              <Text className="text-slate-950 text-center font-bold text-lg">
                 {isSigningOut ? "Signing out..." : "Sign Out"}
               </Text>
             </TouchableOpacity>

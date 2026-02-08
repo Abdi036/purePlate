@@ -132,7 +132,7 @@ export default function AddFoodScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -142,69 +142,72 @@ export default function AddFoodScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-slate-900">Add Food</Text>
-        <Text className="text-slate-500 mt-2">Create a new menu item.</Text>
+        <Text className="text-3xl font-extrabold tracking-tight text-white">
+          Add Food
+        </Text>
+        <Text className="text-white/60 mt-2">Create a new menu item.</Text>
 
-        <View className="mt-6">
+        <View className="mt-6 rounded-3xl bg-white/5 border border-white/10 p-6">
           <View className="mb-4">
-            <Text className="text-slate-700 font-medium mb-2 ml-1">Name</Text>
+            <Text className="text-white/70 font-medium mb-2 ml-1">Name</Text>
             <TextInput
               placeholder="Food name"
               placeholderTextColor="#94a3b8"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+              className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
               value={foodName}
               onChangeText={setFoodName}
             />
           </View>
 
           <View className="mb-4">
-            <Text className="text-slate-700 font-medium mb-2 ml-1">
+            <Text className="text-white/70 font-medium mb-2 ml-1">
               Ingredients (comma-separated)
             </Text>
             <TextInput
               placeholder="e.g. chicken, salt, garlic"
               placeholderTextColor="#94a3b8"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+              className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
               value={ingredientsText}
               onChangeText={setIngredientsText}
             />
           </View>
 
           <View className="mb-4">
-            <Text className="text-slate-700 font-medium mb-2 ml-1">
+            <Text className="text-white/70 font-medium mb-2 ml-1">
               Cook time (minutes)
             </Text>
             <TextInput
               placeholder="e.g. 25"
               keyboardType="numeric"
               placeholderTextColor="#94a3b8"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+              className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
               value={cookTimeMinutes}
               onChangeText={setCookTimeMinutes}
             />
           </View>
 
           <View className="mb-4">
-            <Text className="text-slate-700 font-medium mb-2 ml-1">Price</Text>
+            <Text className="text-white/70 font-medium mb-2 ml-1">Price</Text>
             <TextInput
               placeholder="e.g. 12.99"
               keyboardType="numeric"
               placeholderTextColor="#94a3b8"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
+              className="bg-white/5 p-4 rounded-2xl border border-white/10 font-medium text-white/90"
               value={price}
               onChangeText={setPrice}
             />
           </View>
 
           <View className="mb-4">
-            <Text className="text-slate-700 font-medium mb-2 ml-1">Image</Text>
+            <Text className="text-white/70 font-medium mb-2 ml-1">Image</Text>
 
             <TouchableOpacity
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100"
+              className="bg-white/5 p-4 rounded-2xl border border-white/10"
               onPress={handlePickImage}
               disabled={isSubmitting}
+              activeOpacity={0.85}
             >
-              <Text className="text-slate-800 font-bold text-center">
+              <Text className="text-white/85 font-bold text-center">
                 {pickedImage ? "Change Image" : "Choose Image"}
               </Text>
             </TouchableOpacity>
@@ -224,8 +227,9 @@ export default function AddFoodScreen() {
             className="bg-emerald-500 py-4 rounded-2xl mt-2"
             onPress={handleAddFood}
             disabled={isSubmitting}
+            activeOpacity={0.85}
           >
-            <Text className="text-white text-center font-bold text-lg">
+            <Text className="text-slate-950 text-center font-bold text-lg">
               {isSubmitting ? "Saving..." : "Save Food"}
             </Text>
           </TouchableOpacity>

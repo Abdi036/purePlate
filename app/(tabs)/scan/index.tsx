@@ -72,16 +72,18 @@ export default function ScanTab() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <View className="flex-1 px-8 pt-12">
-        <Text className="text-3xl font-bold text-slate-900">Scan</Text>
+        <Text className="text-3xl font-extrabold tracking-tight text-white">
+          Scan
+        </Text>
 
         {role === "restaurant" ? (
-          <Text className="text-slate-500 mt-2">
+          <Text className="text-white/60 mt-2">
             Show this QR code to customers so they can view your menu.
           </Text>
         ) : (
-          <Text className="text-slate-500 mt-2">
+          <Text className="text-white/60 mt-2">
             Scan a restaurant QR code to instantly view the menu.
           </Text>
         )}
@@ -90,20 +92,20 @@ export default function ScanTab() {
         {role === "restaurant" ? (
           <View className="mt-8">
             {!user ? (
-              <Text className="text-slate-500">Loading...</Text>
+              <Text className="text-white/60">Loading...</Text>
             ) : (
-              <View className="bg-slate-50 border border-slate-100 rounded-3xl p-6 items-center">
-                <View className="bg-white p-4 rounded-2xl border border-slate-100">
+              <View className="bg-white/5 border border-white/10 rounded-3xl p-6 items-center">
+                <View className="bg-white p-4 rounded-2xl border border-white/10">
                   <QRCode
                     value={`${RESTAURANT_QR_PREFIX}${user.$id}`}
                     size={220}
                   />
                 </View>
 
-                <Text className="text-slate-700 font-medium mt-5">
+                <Text className="text-white/80 font-medium mt-5">
                   Your Restaurant QR
                 </Text>
-                <Text className="text-slate-500 mt-2 text-center">
+                <Text className="text-white/60 mt-2 text-center">
                   Customers scan this to view your menu
                 </Text>
               </View>
@@ -113,13 +115,13 @@ export default function ScanTab() {
           /* CAMERA SCAN MODE */
           <View className="flex-1 mt-6">
             {!permission ? (
-              <Text className="text-slate-500 mt-2">Loading camera...</Text>
+              <Text className="text-white/60 mt-2">Loading camera...</Text>
             ) : !permission.granted ? (
-              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                <Text className="text-slate-900 font-semibold">
+              <View className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                <Text className="text-white/90 font-semibold">
                   Camera permission required
                 </Text>
-                <Text className="text-slate-500 mt-2">
+                <Text className="text-white/60 mt-2">
                   Allow camera access to scan restaurant QR codes.
                 </Text>
 
@@ -127,28 +129,30 @@ export default function ScanTab() {
                   className="bg-emerald-500 py-4 rounded-2xl mt-4"
                   onPress={requestPermission}
                   disabled={isSaving}
+                  activeOpacity={0.85}
                 >
-                  <Text className="text-white text-center font-bold text-lg">
+                  <Text className="text-slate-950 text-center font-bold text-lg">
                     Grant Permission
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className="bg-slate-100 py-4 rounded-2xl mt-3"
+                  className="bg-white/5 border border-white/10 py-4 rounded-2xl mt-3"
                   onPress={() => {
                     setIsScanning(false);
                     setHasScanned(false);
                   }}
                   disabled={isSaving}
+                  activeOpacity={0.85}
                 >
-                  <Text className="text-slate-900 text-center font-bold text-lg">
+                  <Text className="text-white/85 text-center font-bold text-lg">
                     Cancel
                   </Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <View className="flex-1">
-                <View className="h-[420px] rounded-3xl overflow-hidden border border-slate-100">
+                <View className="h-[420px] rounded-3xl overflow-hidden border border-white/10 bg-white/5">
                   <CameraView
                     style={{ flex: 1 }}
                     facing="back"
@@ -160,19 +164,20 @@ export default function ScanTab() {
                 </View>
 
                 <TouchableOpacity
-                  className="bg-slate-100 py-4 rounded-2xl mt-4"
+                  className="bg-white/5 border border-white/10 py-4 rounded-2xl mt-4"
                   onPress={() => {
                     setIsScanning(false);
                     setHasScanned(false);
                   }}
                   disabled={isSaving}
+                  activeOpacity={0.85}
                 >
-                  <Text className="text-slate-900 text-center font-bold text-lg">
+                  <Text className="text-white/85 text-center font-bold text-lg">
                     Cancel
                   </Text>
                 </TouchableOpacity>
 
-                <Text className="text-slate-500 mt-4 text-center">
+                <Text className="text-white/60 mt-4 text-center">
                   Point your camera at the restaurant QR code.
                 </Text>
               </View>
@@ -181,16 +186,16 @@ export default function ScanTab() {
         ) : (
           /* MODERN START SCAN CTA */
           <View className="flex-1 items-center justify-center mt-10">
-            <View className="bg-slate-50 border border-slate-100 rounded-3xl p-8 items-center w-full">
-              <View className="w-24 h-24 rounded-full bg-emerald-100 items-center justify-center">
-                <Text className="text-emerald-600 text-4xl font-bold">⌁</Text>
+            <View className="bg-white/5 border border-white/10 rounded-3xl p-8 items-center w-full">
+              <View className="w-24 h-24 rounded-full bg-emerald-500/15 border border-emerald-400/20 items-center justify-center">
+                <Text className="text-emerald-200 text-4xl font-bold">⌁</Text>
               </View>
 
-              <Text className="text-slate-900 text-xl font-semibold mt-6">
+              <Text className="text-white/90 text-xl font-semibold mt-6">
                 Scan Restaurant QR
               </Text>
 
-              <Text className="text-slate-500 text-center mt-2">
+              <Text className="text-white/60 text-center mt-2">
                 Point your camera at a restaurant QR code to instantly view
                 their menu.
               </Text>
@@ -205,8 +210,9 @@ export default function ScanTab() {
                   setIsScanning(true);
                 }}
                 disabled={isLoading || isSaving}
+                activeOpacity={0.85}
               >
-                <Text className="text-white text-center font-bold text-lg">
+                <Text className="text-slate-950 text-center font-bold text-lg">
                   Start Scanning
                 </Text>
               </TouchableOpacity>
