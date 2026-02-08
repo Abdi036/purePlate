@@ -115,6 +115,30 @@ export type FoodDoc = Models.Document &
     restaurantUserId: string;
   };
 
+export async function appwriteGetFoodById(params: {
+  foodId: string;
+}): Promise<FoodDoc | null> {
+  if (!databaseId || !foodsCollectionId) return null;
+
+  const { foodId } = params;
+  if (!foodId) return null;
+
+  try {
+    return await databases.getDocument<FoodDoc>(
+      databaseId,
+      foodsCollectionId,
+      foodId,
+    );
+  } catch (err: any) {
+    const message = typeof err?.message === "string" ? err.message : "";
+    const code = typeof err?.code === "number" ? err.code : undefined;
+    if (code === 404 || message.toLowerCase().includes("not found")) {
+      return null;
+    }
+    throw err;
+  }
+}
+
 export async function appwriteListFoodsForRestaurant(params: {
   userId: string;
 }): Promise<FoodDoc[]> {
