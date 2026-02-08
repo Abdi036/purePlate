@@ -95,170 +95,167 @@ export default function HomeTab() {
         <Link href="/(tabs)/add-food" asChild>
           <TouchableOpacity
             className="absolute z-10 bg-emerald-500 w-14 h-14 rounded-full items-center justify-center"
-            style={{ top: 40, right: 24 }}
+            style={{ top: 80, right: 28 }}
           >
             <Text className="text-white text-3xl font-bold">+</Text>
           </TouchableOpacity>
         </Link>
       ) : null}
 
-      <ScrollView>
-        <View className="flex-1 px-8 pt-12">
-          <Text className="text-3xl font-bold text-slate-900">Home</Text>
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-8 pt-12 pb-10"
+      >
+        <Text className="text-3xl font-bold text-slate-900">Home</Text>
 
-          {isLoading ? (
-            <Text className="text-slate-500 mt-2">Loading...</Text>
-          ) : !user ? (
-            <Text className="text-slate-500 mt-2">Not signed in.</Text>
-          ) : role === "customer" ? (
-            <View className="mt-6">
-              {scannedIds.length === 0 ? (
-                <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                  <Text className="text-slate-900 font-semibold">
-                    Scan a restaurant QR code
-                  </Text>
-                  <Text className="text-slate-500 mt-2">
-                    You don’t have any restaurants yet.
-                  </Text>
-                  <Link href="/(tabs)/scan" className="mt-4">
-                    <Text className="text-emerald-600 font-bold">
-                      Go to Scan
-                    </Text>
-                  </Link>
-                </View>
-              ) : (
-                <View className="gap-y-3">
-                  <Text className="text-slate-700 font-medium">
-                    Your Restaurants
-                  </Text>
+        {isLoading ? (
+          <Text className="text-slate-500 mt-2">Loading...</Text>
+        ) : !user ? (
+          <Text className="text-slate-500 mt-2">Not signed in.</Text>
+        ) : role === "customer" ? (
+          <View className="mt-6">
+            {scannedIds.length === 0 ? (
+              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                <Text className="text-slate-900 font-semibold">
+                  Scan a restaurant QR code
+                </Text>
+                <Text className="text-slate-500 mt-2">
+                  You don’t have any restaurants yet.
+                </Text>
+                <Link href="/(tabs)/scan" className="mt-4">
+                  <Text className="text-emerald-600 font-bold">Go to Scan</Text>
+                </Link>
+              </View>
+            ) : (
+              <View className="gap-y-3">
+                <Text className="text-slate-700 font-medium">
+                  Your Restaurants
+                </Text>
 
-                  {isFetchingRestaurants ? (
-                    <Text className="text-slate-500">
-                      Loading restaurants...
+                {isFetchingRestaurants ? (
+                  <Text className="text-slate-500">Loading restaurants...</Text>
+                ) : restaurants.length > 0 ? (
+                  restaurants.map((r) => (
+                    <Link
+                      key={r.$id}
+                      href={{
+                        pathname:
+                          "/(tabs)/home/restaurant/[restaurantId]" as any,
+                        params: { restaurantId: r.$id },
+                      }}
+                      asChild
+                    >
+                      <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                        <Text className="text-slate-900 font-semibold">
+                          {r.name || r.$id}
+                        </Text>
+                      </TouchableOpacity>
+                    </Link>
+                  ))
+                ) : (
+                  <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                    <Text className="text-slate-900 font-semibold">
+                      Scanned restaurant IDs
                     </Text>
-                  ) : restaurants.length > 0 ? (
-                    restaurants.map((r) => (
+                    <Text className="text-slate-500 mt-2">
+                      Configure Appwrite DB env vars to load names.
+                    </Text>
+                    {scannedIds.map((id) => (
                       <Link
-                        key={r.$id}
+                        key={id}
                         href={{
                           pathname:
                             "/(tabs)/home/restaurant/[restaurantId]" as any,
-                          params: { restaurantId: r.$id },
+                          params: { restaurantId: id },
                         }}
                         asChild
                       >
-                        <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                          <Text className="text-slate-900 font-semibold">
-                            {r.name || r.$id}
-                          </Text>
+                        <TouchableOpacity className="mt-3">
+                          <Text className="text-slate-700">{id}</Text>
                         </TouchableOpacity>
                       </Link>
-                    ))
-                  ) : (
-                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                      <Text className="text-slate-900 font-semibold">
-                        Scanned restaurant IDs
-                      </Text>
-                      <Text className="text-slate-500 mt-2">
-                        Configure Appwrite DB env vars to load names.
-                      </Text>
-                      {scannedIds.map((id) => (
-                        <Link
-                          key={id}
-                          href={{
-                            pathname:
-                              "/(tabs)/home/restaurant/[restaurantId]" as any,
-                            params: { restaurantId: id },
-                          }}
-                          asChild
-                        >
-                          <TouchableOpacity className="mt-3">
-                            <Text className="text-slate-700">{id}</Text>
-                          </TouchableOpacity>
-                        </Link>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              )}
-            </View>
-          ) : role === "restaurant" ? (
-            <View className="mt-6">
-              <Text className="text-slate-700 font-medium">Your Foods</Text>
-
-              <View className="mt-4 gap-y-3">
-                {isFetchingFoods ? (
-                  <Text className="text-slate-500">Loading foods...</Text>
-                ) : foods.length === 0 ? (
-                  <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                    <Text className="text-slate-900 font-semibold">
-                      No foods yet
-                    </Text>
-                    <Text className="text-slate-500 mt-2">
-                      Add your first food item.
-                    </Text>
+                    ))}
                   </View>
-                ) : (
-                  foods.map((f) => {
-                    const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
-
-                    return (
-                      <Link
-                        key={f.$id}
-                        href={{
-                          pathname: "/(tabs)/home/[foodId]" as any,
-                          params: { foodId: f.$id },
-                        }}
-                        asChild
-                      >
-                        <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                          <View className="flex-row items-center">
-                            <View className="w-14 h-14 rounded-full overflow-hidden bg-slate-200">
-                              {imageUrl ? (
-                                <Image
-                                  source={{ uri: imageUrl }}
-                                  className="w-full h-full"
-                                  resizeMode="cover"
-                                />
-                              ) : null}
-                            </View>
-
-                            <View className="flex-1 ml-4">
-                              <Text className="text-slate-900 font-semibold">
-                                {f.name}
-                              </Text>
-                              <Text className="text-slate-500 mt-1">
-                                {f.cookTimeMinutes} min • ${f.price}
-                              </Text>
-                              <Text className="text-slate-500 mt-1">
-                                Ingredients:{" "}
-                                {Array.isArray(f.ingredients)
-                                  ? f.ingredients.join(", ")
-                                  : ""}
-                              </Text>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      </Link>
-                    );
-                  })
                 )}
+              </View>
+            )}
+          </View>
+        ) : role === "restaurant" ? (
+          <View className="mt-6">
+            <Text className="text-slate-700 font-medium">Your Foods</Text>
 
-                {/* <Link href="/(tabs)/add-food" asChild>
+            <View className="mt-4 gap-y-3">
+              {isFetchingFoods ? (
+                <Text className="text-slate-500">Loading foods...</Text>
+              ) : foods.length === 0 ? (
+                <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                  <Text className="text-slate-900 font-semibold">
+                    No foods yet
+                  </Text>
+                  <Text className="text-slate-500 mt-2">
+                    Add your first food item.
+                  </Text>
+                </View>
+              ) : (
+                foods.map((f) => {
+                  const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
+
+                  return (
+                    <Link
+                      key={f.$id}
+                      href={{
+                        pathname: "/(tabs)/home/[foodId]" as any,
+                        params: { foodId: f.$id },
+                      }}
+                      asChild
+                    >
+                      <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                        <View className="flex-row items-center">
+                          <View className="w-14 h-14 rounded-full overflow-hidden bg-slate-200">
+                            {imageUrl ? (
+                              <Image
+                                source={{ uri: imageUrl }}
+                                className="w-full h-full"
+                                resizeMode="cover"
+                              />
+                            ) : null}
+                          </View>
+
+                          <View className="flex-1 ml-4">
+                            <Text className="text-slate-900 font-semibold">
+                              {f.name}
+                            </Text>
+                            <Text className="text-slate-500 mt-1">
+                              {f.cookTimeMinutes} min • ${f.price}
+                            </Text>
+                            <Text className="text-slate-500 mt-1">
+                              Ingredients:{" "}
+                              {Array.isArray(f.ingredients)
+                                ? f.ingredients.join(", ")
+                                : ""}
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </Link>
+                  );
+                })
+              )}
+
+              {/* <Link href="/(tabs)/add-food" asChild>
                 <TouchableOpacity className="bg-emerald-500 py-4 rounded-2xl mt-4">
                   <Text className="text-white text-center font-bold text-lg">
                     Add Food
                   </Text>
                 </TouchableOpacity>
               </Link> */}
-              </View>
             </View>
-          ) : (
-            <Text className="text-slate-500 mt-2">
-              Your role is not set. Please sign up again.
-            </Text>
-          )}
-        </View>
+          </View>
+        ) : (
+          <Text className="text-slate-500 mt-2">
+            Your role is not set. Please sign up again.
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

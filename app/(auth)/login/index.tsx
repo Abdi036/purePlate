@@ -1,6 +1,6 @@
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../../components/FormField";
 import { useAuth } from "../../../context/AuthContext";
@@ -38,7 +38,15 @@ export default function LoginPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 px-8 pt-12">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 32,
+          paddingTop: 48,
+          paddingBottom: 32,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text className="text-3xl font-bold text-slate-900">Welcome Back</Text>
         <Text className="text-slate-500 mt-2 mb-8">
           Sign in to continue your healthy journey.
@@ -87,7 +95,7 @@ export default function LoginPage() {
             <Text className="text-emerald-600 font-bold">Sign Up</Text>
           </Link>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
