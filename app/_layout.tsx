@@ -6,7 +6,13 @@ import "../global.css";
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          animationTypeForReplace: "push",
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />

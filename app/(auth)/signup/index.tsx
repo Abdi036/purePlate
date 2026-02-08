@@ -1,14 +1,7 @@
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../../components/FormField";
 import { useAuth } from "../../../context/AuthContext";
@@ -69,12 +62,7 @@ export default function SignupPage() {
         {/* Brand */}
         <View className="flex-row items-center gap-x-4">
           <View className="h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10">
-            <Image
-              source={require("../../../assets/images/icon.png")}
-              className="h-9 w-9"
-              resizeMode="contain"
-              accessibilityLabel="PurePlate logo"
-            />
+            <Text className="text-4xl">🥗</Text>
           </View>
           <View className="flex-1">
             <Text className="text-2xl font-bold tracking-tight text-white">
@@ -123,9 +111,7 @@ export default function SignupPage() {
           />
 
           <View className="mb-4">
-            <Text className="text-white/70 font-medium mb-2 ml-1">
-              I am a:
-            </Text>
+            <Text className="text-white/70 font-medium mb-2 ml-1">I am a:</Text>
             <View className="flex-row gap-4">
               <TouchableOpacity
                 className={`flex-1 flex-row items-center p-4 rounded-2xl border ${
@@ -178,9 +164,7 @@ export default function SignupPage() {
                 </View>
                 <Text
                   className={`font-medium ${
-                    role === "restaurant"
-                      ? "text-emerald-200"
-                      : "text-white/60"
+                    role === "restaurant" ? "text-emerald-200" : "text-white/60"
                   }`}
                 >
                   Restaurant

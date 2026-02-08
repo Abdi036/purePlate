@@ -17,7 +17,7 @@ export default function LandingPage() {
       <StatusBar style="light" />
 
       <View className="flex-1 px-6 py-10">
-        {/* Decorative color wash (no gradients; layered translucent shapes) */}
+        {/* Decorative color wash */}
         <View className="absolute -top-20 -right-24 h-72 w-72 rounded-full bg-emerald-500/20" />
         <View className="absolute top-24 -left-28 h-80 w-80 rounded-full bg-sky-500/15" />
         <View className="absolute -bottom-28 right-0 h-96 w-96 rounded-full bg-fuchsia-500/10" />
@@ -49,20 +49,9 @@ export default function LandingPage() {
               fits your goals.
             </Text>
 
-            {/* Feature chips */}
-            <View className="mt-7 flex-row flex-wrap gap-3">
-              <View className="flex-row items-center gap-x-2 rounded-full bg-white/5 px-4 py-2 border border-white/10">
-                <Text className="text-base">📸</Text>
-                <Text className="text-sm font-medium text-white/80">Scan</Text>
-              </View>
-              <View className="flex-row items-center gap-x-2 rounded-full bg-white/5 px-4 py-2 border border-white/10">
-                <Text className="text-base">🧾</Text>
-                <Text className="text-sm font-medium text-white/80">Log</Text>
-              </View>
-              <View className="flex-row items-center gap-x-2 rounded-full bg-white/5 px-4 py-2 border border-white/10">
-                <Text className="text-base">📊</Text>
-                <Text className="text-sm font-medium text-white/80">Track</Text>
-              </View>
+            {/* Centered Big Emoji */}
+            <View className="mt-10 items-center justify-center">
+              <Text className="text-9xl">🥗</Text>
             </View>
           </View>
 

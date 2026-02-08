@@ -6,6 +6,8 @@ export default function HomeLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: "slide_from_right",
+        animationTypeForReplace: "push",
       }}
     >
       <Stack.Screen name="index" />

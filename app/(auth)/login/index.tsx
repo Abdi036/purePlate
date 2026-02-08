@@ -1,14 +1,7 @@
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../../components/FormField";
 import { useAuth } from "../../../context/AuthContext";
@@ -65,12 +58,7 @@ export default function LoginPage() {
         {/* Brand */}
         <View className="flex-row items-center gap-x-4">
           <View className="h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10">
-            <Image
-              source={require("../../../assets/images/icon.png")}
-              className="h-9 w-9"
-              resizeMode="contain"
-              accessibilityLabel="PurePlate logo"
-            />
+            <Text className="text-4xl">🥗</Text>
           </View>
           <View className="flex-1">
             <Text className="text-2xl font-bold tracking-tight text-white">

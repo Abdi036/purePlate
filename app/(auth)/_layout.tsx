@@ -15,6 +15,8 @@ export default function AuthLayout() {
         headerShadowVisible: false,
         headerStyle: { backgroundColor: "#020617" },
         headerTintColor: "#34d399",
+        animation: "slide_from_right",
+        animationTypeForReplace: "push",
       }}
     >
       <Stack.Screen name="login/index" options={{ headerShown: false }} />
