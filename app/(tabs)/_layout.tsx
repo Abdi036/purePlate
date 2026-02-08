@@ -11,13 +11,13 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      initialRouteName="home/index"
+      initialRouteName="home"
       screenOptions={{
         headerShown: false,
       }}
     >
       <Tabs.Screen
-        name="home/index"
+        name="home"
         options={{
           title: "Home",
         }}

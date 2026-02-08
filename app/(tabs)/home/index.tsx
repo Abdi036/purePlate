@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { Link } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
@@ -15,7 +15,9 @@ import {
 export default function HomeTab() {
   const { user, prefs, isLoading } = useAuth();
   const role = prefs?.role;
-  const scannedIds = prefs?.scannedRestaurantIds ?? [];
+  const scannedIds = useMemo(() => {
+    return prefs?.scannedRestaurantIds ?? [];
+  }, [prefs?.scannedRestaurantIds]);
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isFetchingRestaurants, setIsFetchingRestaurants] = useState(false);
@@ -154,37 +156,43 @@ export default function HomeTab() {
                   const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
 
                   return (
-                    <View
+                    <Link
                       key={f.$id}
-                      className="bg-slate-50 border border-slate-100 rounded-2xl p-4"
+                      href={{
+                        pathname: "/(tabs)/home/[foodId]" as any,
+                        params: { foodId: f.$id },
+                      }}
+                      asChild
                     >
-                      <View className="flex-row items-center">
-                        <View className="w-14 h-14 rounded-full overflow-hidden bg-slate-200">
-                          {imageUrl ? (
-                            <Image
-                              source={{ uri: imageUrl }}
-                              className="w-full h-full"
-                              resizeMode="cover"
-                            />
-                          ) : null}
-                        </View>
+                      <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                        <View className="flex-row items-center">
+                          <View className="w-14 h-14 rounded-full overflow-hidden bg-slate-200">
+                            {imageUrl ? (
+                              <Image
+                                source={{ uri: imageUrl }}
+                                className="w-full h-full"
+                                resizeMode="cover"
+                              />
+                            ) : null}
+                          </View>
 
-                        <View className="flex-1 ml-4">
-                          <Text className="text-slate-900 font-semibold">
-                            {f.name}
-                          </Text>
-                          <Text className="text-slate-500 mt-1">
-                            {f.cookTimeMinutes} min • ${f.price}
-                          </Text>
-                          <Text className="text-slate-500 mt-1">
-                            Ingredients:{" "}
-                            {Array.isArray(f.ingredients)
-                              ? f.ingredients.join(", ")
-                              : ""}
-                          </Text>
+                          <View className="flex-1 ml-4">
+                            <Text className="text-slate-900 font-semibold">
+                              {f.name}
+                            </Text>
+                            <Text className="text-slate-500 mt-1">
+                              {f.cookTimeMinutes} min • ${f.price}
+                            </Text>
+                            <Text className="text-slate-500 mt-1">
+                              Ingredients:{" "}
+                              {Array.isArray(f.ingredients)
+                                ? f.ingredients.join(", ")
+                                : ""}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
-                    </View>
+                      </TouchableOpacity>
+                    </Link>
                   );
                 })
               )}
