@@ -2,7 +2,14 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -126,7 +133,15 @@ export default function AddFoodScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 px-8 pt-12">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 32,
+          paddingTop: 48,
+          paddingBottom: 32,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text className="text-3xl font-bold text-slate-900">Add Food</Text>
         <Text className="text-slate-500 mt-2">Create a new menu item.</Text>
 
@@ -215,7 +230,7 @@ export default function AddFoodScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

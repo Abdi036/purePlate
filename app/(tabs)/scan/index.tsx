@@ -5,7 +5,7 @@ import {
 } from "expo-camera";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
@@ -26,9 +26,7 @@ export default function ScanTab() {
   const { prefs, updatePrefs, isLoading, user } = useAuth();
   const role = prefs?.role;
 
-  const [restaurantId, setRestaurantId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -41,7 +39,8 @@ export default function ScanTab() {
 
     const normalized = normalizeRestaurantId(rawValue);
     if (!normalized) {
-      Alert.alert("Missing info", "Scan or enter a restaurant QR value.");
+      Alert.alert("Invalid QR", "Unable to read restaurant QR code.");
+      setHasScanned(false);
       return;
     }
 
@@ -50,7 +49,6 @@ export default function ScanTab() {
     try {
       setIsSaving(true);
       await updatePrefs({ scannedRestaurantIds: next });
-      setRestaurantId("");
       setIsScanning(false);
       setHasScanned(false);
       Alert.alert("Saved", "Restaurant added.");
@@ -84,16 +82,17 @@ export default function ScanTab() {
           </Text>
         ) : (
           <Text className="text-slate-500 mt-2">
-            Scan a restaurant QR code to add it.
+            Scan a restaurant QR code to instantly view the menu.
           </Text>
         )}
 
+        {/* RESTAURANT VIEW */}
         {role === "restaurant" ? (
           <View className="mt-8">
             {!user ? (
               <Text className="text-slate-500">Loading...</Text>
             ) : (
-              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-6 items-center">
+              <View className="bg-slate-50 border border-slate-100 rounded-3xl p-6 items-center">
                 <View className="bg-white p-4 rounded-2xl border border-slate-100">
                   <QRCode
                     value={`${RESTAURANT_QR_PREFIX}${user.$id}`}
@@ -102,15 +101,16 @@ export default function ScanTab() {
                 </View>
 
                 <Text className="text-slate-700 font-medium mt-5">
-                  Your Restaurant ID
+                  Your Restaurant QR
                 </Text>
                 <Text className="text-slate-500 mt-2 text-center">
-                  {user.$id}
+                  Customers scan this to view your menu
                 </Text>
               </View>
             )}
           </View>
         ) : isScanning ? (
+          /* CAMERA SCAN MODE */
           <View className="flex-1 mt-6">
             {!permission ? (
               <Text className="text-slate-500 mt-2">Loading camera...</Text>
@@ -148,7 +148,7 @@ export default function ScanTab() {
               </View>
             ) : (
               <View className="flex-1">
-                <View className="h-[420px] rounded-2xl overflow-hidden border border-slate-100">
+                <View className="h-[420px] rounded-3xl overflow-hidden border border-slate-100">
                   <CameraView
                     style={{ flex: 1 }}
                     facing="back"
@@ -179,58 +179,37 @@ export default function ScanTab() {
             )}
           </View>
         ) : (
-          <View className="mt-6">
-            <TouchableOpacity
-              className="bg-emerald-500 py-4 rounded-2xl"
-              onPress={async () => {
-                if (!permission?.granted) {
-                  await requestPermission();
-                }
-                setHasScanned(false);
-                setIsScanning(true);
-              }}
-              disabled={isLoading || isSaving}
-            >
-              <Text className="text-white text-center font-bold text-lg">
-                Scan QR Code
-              </Text>
-            </TouchableOpacity>
+          /* MODERN START SCAN CTA */
+          <View className="flex-1 items-center justify-center mt-10">
+            <View className="bg-slate-50 border border-slate-100 rounded-3xl p-8 items-center w-full">
+              <View className="w-24 h-24 rounded-full bg-emerald-100 items-center justify-center">
+                <Text className="text-emerald-600 text-4xl font-bold">⌁</Text>
+              </View>
 
-            <Text className="text-slate-700 font-medium mb-2 ml-1 mt-6">
-              Restaurant ID / QR
-            </Text>
-            <TextInput
-              placeholder="e.g. 65c0..."
-              placeholderTextColor="#94a3b8"
-              autoCapitalize="none"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
-              value={restaurantId}
-              onChangeText={setRestaurantId}
-            />
-
-            <TouchableOpacity
-              className="bg-emerald-500 py-4 rounded-2xl mt-4"
-              onPress={() => saveRestaurantId(restaurantId)}
-              disabled={isLoading || isSaving}
-            >
-              <Text className="text-white text-center font-bold text-lg">
-                {isSaving ? "Saving..." : "Save"}
+              <Text className="text-slate-900 text-xl font-semibold mt-6">
+                Scan Restaurant QR
               </Text>
-            </TouchableOpacity>
 
-            <View className="mt-8">
-              <Text className="text-slate-700 font-medium">
-                Scanned restaurants
+              <Text className="text-slate-500 text-center mt-2">
+                Point your camera at a restaurant QR code to instantly view
+                their menu.
               </Text>
-              {scannedIds.length === 0 ? (
-                <Text className="text-slate-500 mt-2">None yet.</Text>
-              ) : (
-                scannedIds.map((id) => (
-                  <Text key={id} className="text-slate-700 mt-2">
-                    {id}
-                  </Text>
-                ))
-              )}
+
+              <TouchableOpacity
+                className="bg-emerald-500 py-4 rounded-2xl mt-6 w-full"
+                onPress={async () => {
+                  if (!permission?.granted) {
+                    await requestPermission();
+                  }
+                  setHasScanned(false);
+                  setIsScanning(true);
+                }}
+                disabled={isLoading || isSaving}
+              >
+                <Text className="text-white text-center font-bold text-lg">
+                  Start Scanning
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
