@@ -13,8 +13,8 @@ export default function AuthLayout() {
       screenOptions={{
         headerTitle: "",
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: "white" },
-        headerTintColor: "#10b981",
+        headerStyle: { backgroundColor: "#020617" },
+        headerTintColor: "#34d399",
       }}
     >
       <Stack.Screen name="login/index" options={{ headerShown: false }} />
