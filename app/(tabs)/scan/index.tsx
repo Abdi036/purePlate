@@ -1,7 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
+
+const RESTAURANT_QR_PREFIX = "pureplate:restaurant:";
+
+function normalizeRestaurantId(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.toLowerCase().startsWith(RESTAURANT_QR_PREFIX)) {
+    return trimmed.slice(RESTAURANT_QR_PREFIX.length).trim();
+  }
+  return trimmed;
+}
 
 export default function ScanTab() {
   const { prefs, updatePrefs, isLoading, user } = useAuth();
@@ -15,13 +27,13 @@ export default function ScanTab() {
     if (isSaving) return;
     if (!user) return;
 
-    const trimmed = restaurantId.trim();
-    if (!trimmed) {
+    const normalized = normalizeRestaurantId(restaurantId);
+    if (!normalized) {
       Alert.alert("Missing info", "Enter a restaurant ID / QR value.");
       return;
     }
 
-    const next = Array.from(new Set([...(scannedIds ?? []), trimmed]));
+    const next = Array.from(new Set([...(scannedIds ?? []), normalized]));
 
     try {
       setIsSaving(true);
@@ -45,7 +57,7 @@ export default function ScanTab() {
         <Text className="text-3xl font-bold text-slate-900">Scan</Text>
         {role === "restaurant" ? (
           <Text className="text-slate-500 mt-2">
-            Your QR code will be generated soon.
+            Show this QR code to customers so they can view your menu.
           </Text>
         ) : (
           <Text className="text-slate-500 mt-2">
@@ -53,7 +65,29 @@ export default function ScanTab() {
           </Text>
         )}
 
-        {role === "restaurant" ? null : (
+        {role === "restaurant" ? (
+          <View className="mt-8">
+            {!user ? (
+              <Text className="text-slate-500">Loading...</Text>
+            ) : (
+              <View className="bg-slate-50 border border-slate-100 rounded-2xl p-6 items-center">
+                <View className="bg-white p-4 rounded-2xl border border-slate-100">
+                  <QRCode
+                    value={`${RESTAURANT_QR_PREFIX}${user.$id}`}
+                    size={220}
+                  />
+                </View>
+
+                <Text className="text-slate-700 font-medium mt-5">
+                  Your Restaurant ID
+                </Text>
+                <Text className="text-slate-500 mt-2 text-center">
+                  {user.$id}
+                </Text>
+              </View>
+            )}
+          </View>
+        ) : (
           <>
             <View className="mt-6">
               <Text className="text-slate-700 font-medium mb-2 ml-1">
