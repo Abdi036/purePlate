@@ -7,6 +7,7 @@ import {
   Query,
   Storage,
 } from "appwrite";
+import { TTLCache } from "./cache";
 
 const endpoint =
   process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT ?? "https://cloud.appwrite.io/v1";
@@ -89,17 +90,42 @@ export type Restaurant = Models.Document & {
   name?: string;
 };
 
+const RESTAURANTS_BY_IDS_TTL_MS = 5 * 60 * 1000;
+const FOODS_FOR_RESTAURANT_TTL_MS = 2 * 60 * 1000;
+const FOOD_BY_ID_TTL_MS = 5 * 60 * 1000;
+
+const restaurantsByIdsCache = new TTLCache<Restaurant[]>();
+const foodsForRestaurantCache = new TTLCache<FoodDoc[]>();
+const foodByIdCache = new TTLCache<FoodDoc | null>();
+
+function normalizeIdsKey(ids: string[]): string {
+  return ids.filter(Boolean).slice().sort().join(",");
+}
+
+export function appwritePeekRestaurantsByIds(
+  ids: string[],
+): Restaurant[] | undefined {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  return restaurantsByIdsCache.get(`restaurantsByIds:${normalizeIdsKey(ids)}`);
+}
+
 export async function appwriteListRestaurantsByIds(
   ids: string[],
 ): Promise<Restaurant[]> {
   if (!databaseId || !restaurantsCollectionId || ids.length === 0) return [];
+
+  const cacheKey = `restaurantsByIds:${normalizeIdsKey(ids)}`;
+  const cached = restaurantsByIdsCache.get(cacheKey);
+  if (cached !== undefined) return cached;
 
   const result = await databases.listDocuments<Restaurant>(
     databaseId,
     restaurantsCollectionId,
     [Query.equal("$id", ids)],
   );
-  return result.documents;
+  const docs = result.documents;
+  restaurantsByIdsCache.set(cacheKey, docs, RESTAURANTS_BY_IDS_TTL_MS);
+  return docs;
 }
 
 export type FoodInput = {
@@ -115,6 +141,20 @@ export type FoodDoc = Models.Document &
     restaurantUserId: string;
   };
 
+export function appwritePeekFoodById(
+  foodId: string,
+): FoodDoc | null | undefined {
+  if (!foodId) return undefined;
+  return foodByIdCache.get(`foodById:${foodId}`);
+}
+
+export function appwritePeekFoodsForRestaurant(
+  userId: string,
+): FoodDoc[] | undefined {
+  if (!userId) return undefined;
+  return foodsForRestaurantCache.get(`foodsForRestaurant:${userId}`);
+}
+
 export async function appwriteGetFoodById(params: {
   foodId: string;
 }): Promise<FoodDoc | null> {
@@ -123,16 +163,23 @@ export async function appwriteGetFoodById(params: {
   const { foodId } = params;
   if (!foodId) return null;
 
+  const cacheKey = `foodById:${foodId}`;
+  const cached = foodByIdCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   try {
-    return await databases.getDocument<FoodDoc>(
+    const doc = await databases.getDocument<FoodDoc>(
       databaseId,
       foodsCollectionId,
       foodId,
     );
+    foodByIdCache.set(cacheKey, doc, FOOD_BY_ID_TTL_MS);
+    return doc;
   } catch (err: any) {
     const message = typeof err?.message === "string" ? err.message : "";
     const code = typeof err?.code === "number" ? err.code : undefined;
     if (code === 404 || message.toLowerCase().includes("not found")) {
+      foodByIdCache.set(cacheKey, null, 30 * 1000);
       return null;
     }
     throw err;
@@ -145,13 +192,19 @@ export async function appwriteListFoodsForRestaurant(params: {
   if (!databaseId || !foodsCollectionId) return [];
 
   const { userId } = params;
+  const cacheKey = `foodsForRestaurant:${userId}`;
+  const cached = foodsForRestaurantCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   try {
     const result = await databases.listDocuments<FoodDoc>(
       databaseId,
       foodsCollectionId,
       [Query.equal("restaurantUserId", userId)],
     );
-    return result.documents;
+    const docs = result.documents;
+    foodsForRestaurantCache.set(cacheKey, docs, FOODS_FOR_RESTAURANT_TTL_MS);
+    return docs;
   } catch (err: any) {
     const message = typeof err?.message === "string" ? err.message : "";
     if (message.includes("Attribute not found in schema")) {
@@ -255,12 +308,17 @@ export async function appwriteCreateFood(params: {
   };
 
   try {
-    return await databases.createDocument<FoodDoc>(
+    const created = await databases.createDocument<FoodDoc>(
       databaseId,
       foodsCollectionId,
       ID.unique(),
       data,
     );
+
+    // Keep caches consistent so the Home list/detail don't refetch immediately.
+    foodsForRestaurantCache.delete(`foodsForRestaurant:${userId}`);
+    foodByIdCache.set(`foodById:${created.$id}`, created, FOOD_BY_ID_TTL_MS);
+    return created;
   } catch (err: any) {
     const message = typeof err?.message === "string" ? err.message : "";
     if (

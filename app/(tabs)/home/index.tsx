@@ -8,6 +8,8 @@ import {
   appwriteGetFoodImageViewUrl,
   appwriteListFoodsForRestaurant,
   appwriteListRestaurantsByIds,
+  appwritePeekFoodsForRestaurant,
+  appwritePeekRestaurantsByIds,
   FoodDoc,
   Restaurant,
 } from "../../../lib/appwrite";
@@ -33,6 +35,12 @@ export default function HomeTab() {
       return;
     }
 
+    const cached = appwritePeekRestaurantsByIds(scannedIds);
+    if (cached !== undefined) {
+      setRestaurants(cached);
+      return;
+    }
+
     let mounted = true;
     (async () => {
       try {
@@ -51,6 +59,13 @@ export default function HomeTab() {
 
   const loadFoods = useCallback(async () => {
     if (!user) return;
+
+    const cached = appwritePeekFoodsForRestaurant(user.$id);
+    if (cached !== undefined) {
+      setFoods(cached);
+      return;
+    }
+
     try {
       setIsFetchingFoods(true);
       const result = await appwriteListFoodsForRestaurant({ userId: user.$id });

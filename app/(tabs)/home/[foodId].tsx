@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   appwriteGetFoodById,
   appwriteGetFoodImageViewUrl,
+  appwritePeekFoodById,
   FoodDoc,
 } from "../../../lib/appwrite";
 
@@ -28,6 +29,16 @@ export default function FoodDetailScreen() {
         if (mounted) {
           setFood(null);
           setErrorMessage("Missing food id.");
+        }
+        return;
+      }
+
+      const cached = appwritePeekFoodById(resolvedFoodId);
+      if (cached !== undefined) {
+        if (mounted) {
+          setFood(cached);
+          setErrorMessage(cached ? null : "Food not found.");
+          setIsLoading(false);
         }
         return;
       }
