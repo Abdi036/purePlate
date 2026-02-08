@@ -23,6 +23,44 @@ Create a `.env` file (see `.env.example`) and set:
 - `EXPO_PUBLIC_APPWRITE_ENDPOINT` (default: `https://cloud.appwrite.io/v1`)
 - `EXPO_PUBLIC_APPWRITE_PROJECT_ID`
 
+## Appwrite (Add Food)
+
+To save foods (including an image picked from the device), you need **Appwrite Database + Storage** configured.
+
+### 1) Storage (food images)
+
+- Create a **Storage Bucket** (e.g. `food-images`).
+- Copy the **Bucket ID** and set one of:
+  - `EXPO_PUBLIC_APPWRITE_FOOD_IMAGES_BUCKET_ID` (preferred)
+  - or keep using your existing `EXPO_PUBLIC_APPWRITE_BUCKET_ID` (fallback supported)
+
+### 2) Database + Collection (foods)
+
+- Create a **Database** and a **Collection** for foods.
+- Set env vars:
+  - `EXPO_PUBLIC_APPWRITE_DATABASE_ID`
+  - `EXPO_PUBLIC_APPWRITE_FOODS_COLLECTION_ID`
+
+Suggested attributes for the foods collection (names must match):
+
+- `name` (string)
+- `ingredients` (string, **array enabled**)
+- `cookTimeMinutes` (integer)
+- `price` (double)
+- `imageFileId` (string)
+- `restaurantUserId` (string)
+
+Permissions (simple starting point):
+
+- Collection: allow authenticated users to **create/read**.
+- Bucket: allow authenticated users to **create/read**.
+
+Once that’s set, the Add Food screen will:
+
+- Pick an image from your phone
+- Upload it to Storage
+- Save a food document in the foods collection with `imageFileId`
+
 Auth screens are wired to Appwrite:
 
 - Signup: `app/(auth)/signup/index.tsx`

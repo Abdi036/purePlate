@@ -1,9 +1,16 @@
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
-import { appwriteCreateFood, FoodInput } from "../../../lib/appwrite";
+import {
+  appwriteCreateFood,
+  appwriteUploadFoodImage,
+  FoodInput,
+  PickedImage,
+} from "../../../lib/appwrite";
 
 export default function AddFoodScreen() {
   const router = useRouter();
@@ -15,7 +22,7 @@ export default function AddFoodScreen() {
   const [ingredientsText, setIngredientsText] = useState("");
   const [cookTimeMinutes, setCookTimeMinutes] = useState("");
   const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [pickedImage, setPickedImage] = useState<PickedImage | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const ingredients = useMemo(() => {
@@ -24,6 +31,34 @@ export default function AddFoodScreen() {
       .map((x) => x.trim())
       .filter(Boolean);
   }, [ingredientsText]);
+
+  const handlePickImage = async () => {
+    if (isSubmitting) return;
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        "Permission required",
+        "Please allow photo library access to choose an image.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.85,
+      allowsEditing: false,
+    });
+
+    if (result.canceled) return;
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+
+    const name = (asset as any).fileName || `food-${Date.now().toString()}.jpg`;
+    const type = (asset as any).mimeType || "image/jpeg";
+
+    setPickedImage({ uri: asset.uri, name, type });
+  };
 
   const handleAddFood = async () => {
     if (isSubmitting) return;
@@ -52,21 +87,24 @@ export default function AddFoodScreen() {
       Alert.alert("Invalid", "Price must be a positive number.");
       return;
     }
-    if (!imageUrl.trim()) {
-      Alert.alert("Missing info", "Please provide an image URL for now.");
+    if (!pickedImage) {
+      Alert.alert("Missing info", "Please choose an image.");
       return;
     }
 
-    const food: FoodInput = {
-      name: trimmedName,
-      ingredients,
-      cookTimeMinutes: minutes,
-      price: parsedPrice,
-      imageUrl: imageUrl.trim(),
-    };
-
     try {
       setIsSubmitting(true);
+
+      const { fileId } = await appwriteUploadFoodImage({ image: pickedImage });
+
+      const food: FoodInput = {
+        name: trimmedName,
+        ingredients,
+        cookTimeMinutes: minutes,
+        price: parsedPrice,
+        imageFileId: fileId,
+      };
+
       await appwriteCreateFood({ userId: user.$id, food });
       Alert.alert("Saved", "Food added successfully.");
       router.back();
@@ -144,17 +182,27 @@ export default function AddFoodScreen() {
           </View>
 
           <View className="mb-4">
-            <Text className="text-slate-700 font-medium mb-2 ml-1">
-              Image URL
-            </Text>
-            <TextInput
-              placeholder="https://..."
-              autoCapitalize="none"
-              placeholderTextColor="#94a3b8"
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-100 font-medium text-slate-800"
-              value={imageUrl}
-              onChangeText={setImageUrl}
-            />
+            <Text className="text-slate-700 font-medium mb-2 ml-1">Image</Text>
+
+            <TouchableOpacity
+              className="bg-slate-50 p-4 rounded-2xl border border-slate-100"
+              onPress={handlePickImage}
+              disabled={isSubmitting}
+            >
+              <Text className="text-slate-800 font-bold text-center">
+                {pickedImage ? "Change Image" : "Choose Image"}
+              </Text>
+            </TouchableOpacity>
+
+            {pickedImage ? (
+              <View className="mt-3">
+                <Image
+                  source={{ uri: pickedImage.uri }}
+                  contentFit="cover"
+                  style={{ width: "100%", height: 160, borderRadius: 16 }}
+                />
+              </View>
+            ) : null}
           </View>
 
           <TouchableOpacity

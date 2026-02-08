@@ -52,6 +52,12 @@ export default function HomeTab() {
       setIsFetchingFoods(true);
       const result = await appwriteListFoodsForRestaurant({ userId: user.$id });
       setFoods(result);
+    } catch (err: any) {
+      console.warn(
+        "Unable to load foods:",
+        typeof err?.message === "string" ? err.message : err,
+      );
+      setFoods([]);
     } finally {
       setIsFetchingFoods(false);
     }
@@ -84,7 +90,7 @@ export default function HomeTab() {
                 <Text className="text-slate-500 mt-2">
                   You don’t have any restaurants yet.
                 </Text>
-                <Link href="/(tabs)/scan/index" className="mt-4">
+                <Link href="/(tabs)/scan" className="mt-4">
                   <Text className="text-emerald-600 font-bold">Go to Scan</Text>
                 </Link>
               </View>
