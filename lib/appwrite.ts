@@ -203,6 +203,7 @@ export type FoodInput = {
   cookTimeMinutes: number;
   price: number;
   imageFileId: string;
+  available?: boolean;
 };
 
 export type FoodDoc = Models.Document &
@@ -373,6 +374,7 @@ export async function appwriteCreateFood(params: {
     cookTimeMinutes: food.cookTimeMinutes,
     price: food.price,
     imageFileId: food.imageFileId,
+    available: typeof food.available === "boolean" ? food.available : true,
     restaurantUserId: userId,
   };
 
@@ -395,9 +397,81 @@ export async function appwriteCreateFood(params: {
       message.includes("unknown attribute")
     ) {
       throw new Error(
-        "Appwrite foods collection schema does not match the fields this app sends. In Appwrite Console → Databases → your DB → Foods collection → Attributes, add these keys: name (string), ingredients (string[]), cookTimeMinutes (integer), price (double), imageFileId (string), restaurantUserId (string).",
+        "Appwrite foods collection schema does not match the fields this app sends. In Appwrite Console → Databases → your DB → Foods collection → Attributes, add these keys: name (string), ingredients (string[]), cookTimeMinutes (integer), price (double), imageFileId (string), available (boolean), restaurantUserId (string).",
       );
     }
     throw err;
   }
+}
+
+export async function appwriteUpdateFood(params: {
+  userId: string;
+  foodId: string;
+  food: Pick<
+    FoodInput,
+    "name" | "ingredients" | "cookTimeMinutes" | "price"
+  > & {
+    available?: boolean;
+  };
+}): Promise<FoodDoc> {
+  if (!databaseId || !foodsCollectionId) {
+    throw new Error(
+      "Missing Appwrite DB config. Set EXPO_PUBLIC_APPWRITE_DATABASE_ID and EXPO_PUBLIC_APPWRITE_FOODS_COLLECTION_ID.",
+    );
+  }
+
+  const { userId, foodId, food } = params;
+  if (!foodId) throw new Error("Missing food id.");
+
+  const data = {
+    name: food.name,
+    ingredients: food.ingredients,
+    cookTimeMinutes: food.cookTimeMinutes,
+    price: food.price,
+    available: typeof food.available === "boolean" ? food.available : undefined,
+  };
+
+  let updated: FoodDoc;
+  try {
+    updated = await databases.updateDocument<FoodDoc>(
+      databaseId,
+      foodsCollectionId,
+      foodId,
+      data,
+    );
+  } catch (err: any) {
+    const message = typeof err?.message === "string" ? err.message : "";
+    if (
+      message.includes("Invalid document structure") &&
+      message.includes("unknown attribute")
+    ) {
+      throw new Error(
+        "Appwrite foods collection schema does not match the fields this app updates. In Appwrite Console → Databases → your DB → Foods collection → Attributes, add these keys: name (string), ingredients (string[]), cookTimeMinutes (integer), price (double), available (boolean).",
+      );
+    }
+    throw err;
+  }
+
+  foodsForRestaurantCache.delete(`foodsForRestaurant:${userId}`);
+  foodByIdCache.set(`foodById:${foodId}`, updated, FOOD_BY_ID_TTL_MS);
+  return updated;
+}
+
+export async function appwriteDeleteFood(params: {
+  userId: string;
+  foodId: string;
+}): Promise<void> {
+  if (!databaseId || !foodsCollectionId) {
+    throw new Error(
+      "Missing Appwrite DB config. Set EXPO_PUBLIC_APPWRITE_DATABASE_ID and EXPO_PUBLIC_APPWRITE_FOODS_COLLECTION_ID.",
+    );
+  }
+
+  const { userId, foodId } = params;
+  if (!foodId) return;
+
+  await databases.deleteDocument(databaseId, foodsCollectionId, foodId);
+
+  foodsForRestaurantCache.delete(`foodsForRestaurant:${userId}`);
+  foodByIdCache.delete(`foodById:${foodId}`);
 }

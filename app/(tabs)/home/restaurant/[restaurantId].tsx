@@ -124,6 +124,7 @@ export default function RestaurantDetailScreen() {
 
             {foods.map((f) => {
               const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
+              const isUnavailable = f.available === false;
 
               return (
                 <Link
@@ -134,7 +135,9 @@ export default function RestaurantDetailScreen() {
                   }}
                   asChild
                 >
-                  <TouchableOpacity className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                  <TouchableOpacity
+                    className={`bg-slate-50 border border-slate-100 rounded-2xl p-4 ${isUnavailable ? "opacity-50" : ""}`}
+                  >
                     <View className="flex-row items-center">
                       <View className="w-14 h-14 rounded-full overflow-hidden bg-slate-200">
                         {imageUrl ? (
@@ -153,6 +156,11 @@ export default function RestaurantDetailScreen() {
                         <Text className="text-slate-500 mt-1">
                           {f.cookTimeMinutes} min • ${f.price}
                         </Text>
+                        {isUnavailable ? (
+                          <Text className="text-slate-500 mt-1">
+                            Finished for now
+                          </Text>
+                        ) : null}
                       </View>
                     </View>
                   </TouchableOpacity>
