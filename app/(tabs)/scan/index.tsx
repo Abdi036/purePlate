@@ -213,7 +213,7 @@ export default function ScanTab() {
                 activeOpacity={0.85}
               >
                 <Text className="text-slate-950 text-center font-bold text-lg">
-                  Start Scanning
+                  Scan QR Code
                 </Text>
               </TouchableOpacity>
             </View>

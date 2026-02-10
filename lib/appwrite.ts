@@ -96,6 +96,17 @@ export async function appwriteUpdatePrefs(
   return await account.updatePrefs<UserPrefs>({ prefs });
 }
 
+export async function appwriteUpdateName(params: {
+  name: string;
+}): Promise<Models.User<Models.Preferences>> {
+  const nextName = typeof params.name === "string" ? params.name.trim() : "";
+  if (!nextName) {
+    throw new Error("Name cannot be empty.");
+  }
+  // Appwrite Account API updates the name on the current user.
+  return await account.updateName(nextName);
+}
+
 export async function appwriteSignOut(): Promise<void> {
   await account.deleteSession("current");
 }

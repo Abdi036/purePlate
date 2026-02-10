@@ -14,6 +14,7 @@ import {
   appwriteSignIn,
   appwriteSignOut,
   appwriteSignUp,
+  appwriteUpdateName,
   appwriteUpdatePrefs,
   appwriteUpsertRestaurant,
   UserPrefs,
@@ -35,6 +36,7 @@ type AuthContextValue = {
     role: UserRole;
   }) => Promise<User>;
   signOut: () => Promise<void>;
+  updateName: (name: string) => Promise<void>;
   updatePrefs: (prefs: Partial<UserPrefs>) => Promise<void>;
 };
 
@@ -121,6 +123,28 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setPrefs(null);
   }, []);
 
+  const updateName = useCallback(
+    async (name: string) => {
+      const updatedUser = await appwriteUpdateName({ name });
+      setUser(updatedUser);
+
+      if (prefs?.role === "restaurant") {
+        try {
+          await appwriteUpsertRestaurant({
+            userId: updatedUser.$id,
+            name: updatedUser.name,
+          });
+        } catch (err: any) {
+          console.warn(
+            "Unable to sync restaurant profile:",
+            typeof err?.message === "string" ? err.message : err,
+          );
+        }
+      }
+    },
+    [prefs?.role],
+  );
+
   const updatePrefs = useCallback(
     async (next: Partial<UserPrefs>) => {
       const merged = { ...(prefs ?? {}), ...next };
@@ -141,9 +165,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signIn,
       signUp,
       signOut,
+      updateName,
       updatePrefs,
     }),
-    [user, prefs, isLoading, refresh, signIn, signUp, signOut, updatePrefs],
+    [
+      user,
+      prefs,
+      isLoading,
+      refresh,
+      signIn,
+      signUp,
+      signOut,
+      updateName,
+      updatePrefs,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

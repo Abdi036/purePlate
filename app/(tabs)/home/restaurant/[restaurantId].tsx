@@ -123,7 +123,7 @@ export default function RestaurantDetailScreen() {
 
         <View className="mt-6 flex-row items-end justify-between">
           <View className="flex-1 pr-4">
-            <Text className="text-white/80 font-semibold">Menu</Text>
+            <Text className="text-white/80 font-semibold py-2">Food Menu</Text>
             <Text
               className="text-white text-3xl font-extrabold tracking-tight mt-1"
               numberOfLines={2}
