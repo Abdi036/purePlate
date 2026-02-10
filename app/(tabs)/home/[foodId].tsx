@@ -314,14 +314,22 @@ export default function FoodDetailScreen() {
                         onPress={() => void saveEdits()}
                         disabled={isMutating}
                       >
-                        <Ionicons name="checkmark" size={22} color="rgba(255,255,255,0.9)" />
+                        <Ionicons
+                          name="checkmark"
+                          size={22}
+                          color="rgba(255,255,255,0.9)"
+                        />
                       </TouchableOpacity>
                       <TouchableOpacity
                         className="p-2"
                         onPress={cancelEdit}
                         disabled={isMutating}
                       >
-                        <Ionicons name="close" size={22} color="rgba(255,255,255,0.9)" />
+                        <Ionicons
+                          name="close"
+                          size={22}
+                          color="rgba(255,255,255,0.9)"
+                        />
                       </TouchableOpacity>
                     </>
                   ) : (
@@ -331,14 +339,22 @@ export default function FoodDetailScreen() {
                         onPress={() => setIsEditing(true)}
                         disabled={isMutating}
                       >
-                        <Ionicons name="pencil" size={20} color="rgba(255,255,255,0.9)" />
+                        <Ionicons
+                          name="pencil"
+                          size={20}
+                          color="rgba(255,255,255,0.9)"
+                        />
                       </TouchableOpacity>
                       <TouchableOpacity
                         className="p-2"
                         onPress={() => void deleteFood()}
                         disabled={isMutating}
                       >
-                        <Ionicons name="trash" size={20} color="rgba(255,255,255,0.9)" />
+                        <Ionicons
+                          name="trash"
+                          size={20}
+                          color="rgba(255,255,255,0.9)"
+                        />
                       </TouchableOpacity>
                     </>
                   )}

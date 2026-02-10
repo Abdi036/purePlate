@@ -19,8 +19,8 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#34d399",
         tabBarInactiveTintColor: "rgba(255,255,255,0.55)",
         tabBarStyle: {
-          backgroundColor: "#020617",
-          borderTopColor: "rgba(255,255,255,0.08)",
+          backgroundColor: "#020619",
+          borderTopColor: "rgba(255,255,240,0.08)",
         },
       }}
     >
@@ -33,7 +33,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      
+
       <Tabs.Screen
         name="scan/index"
         options={{
@@ -43,7 +43,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      
+
       <Tabs.Screen
         name="profile/index"
         options={{
