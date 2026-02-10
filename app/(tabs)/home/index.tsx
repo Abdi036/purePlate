@@ -125,11 +125,15 @@ export default function HomeTab() {
         contentContainerClassName="px-6 pt-6 pb-10"
       >
         {isLoading ? (
-          <Text className="text-white/60 mt-2">Loading...</Text>
+          <View className="flex w-full h-[100vh] items-center justify-center">
+            <Text className="text-white/60 mt-2">Loading...</Text>
+          </View>
         ) : !user ? (
           <Text className="text-white/60 mt-2">Not signed in.</Text>
         ) : !prefs ? (
-          <Text className="text-white/60 mt-2">Loading...</Text>
+          <View className="flex w-full h-[100vh] items-center justify-center">
+            <Text className="text-white/60 mt-2">Loading...</Text>
+          </View>
         ) : role === "customer" ? (
           <View className="mt-2">
             <View className="flex-row items-end justify-between">
@@ -172,7 +176,7 @@ export default function HomeTab() {
               <View className="mt-6">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-white/70 font-medium">
-                    Your restaurants
+                    Recent restaurants
                   </Text>
                   <Text className="text-white/50">
                     {restaurants.length || scannedIds.length}

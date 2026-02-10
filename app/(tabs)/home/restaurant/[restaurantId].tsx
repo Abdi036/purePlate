@@ -1,8 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../../../context/AuthContext";
 import {
   appwriteGetFoodImageViewUrl,
   appwriteListFoodsForRestaurant,
@@ -27,6 +35,11 @@ export default function RestaurantDetailScreen() {
   const [foods, setFoods] = useState<FoodDoc[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { prefs } = useAuth();
+  const isCustomer = prefs?.role === "customer";
+  const [minPriceText, setMinPriceText] = useState("");
+  const [maxPriceText, setMaxPriceText] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -102,6 +115,69 @@ export default function RestaurantDetailScreen() {
     return `$${n.toFixed(2)}`;
   };
 
+  const minPrice = useMemo(() => {
+    const raw = minPriceText.trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return NaN;
+    if (n < 0) return NaN;
+    return n;
+  }, [minPriceText]);
+
+  const maxPrice = useMemo(() => {
+    const raw = maxPriceText.trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return NaN;
+    if (n < 0) return NaN;
+    return n;
+  }, [maxPriceText]);
+
+  const hasValidMinPrice = minPrice !== null && Number.isFinite(minPrice);
+  const hasValidMaxPrice = maxPrice !== null && Number.isFinite(maxPrice);
+
+  const minPriceCents = useMemo(() => {
+    if (!hasValidMinPrice) return null;
+    return Math.round((minPrice as number) * 100);
+  }, [hasValidMinPrice, minPrice]);
+
+  const maxPriceCents = useMemo(() => {
+    if (!hasValidMaxPrice) return null;
+    return Math.round((maxPrice as number) * 100);
+  }, [hasValidMaxPrice, maxPrice]);
+
+  const isRangeInvalid = useMemo(() => {
+    if (minPriceCents === null || maxPriceCents === null) return false;
+    return minPriceCents > maxPriceCents;
+  }, [maxPriceCents, minPriceCents]);
+
+  const hasActivePriceFilter =
+    (hasValidMinPrice || hasValidMaxPrice) && !isRangeInvalid;
+
+  const filteredFoods = useMemo(() => {
+    if (!isCustomer) return foods;
+    if (!hasActivePriceFilter) return foods;
+
+    const toNumber = (value: unknown) => {
+      const n = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    return foods.filter((food) => {
+      const price = toNumber(food.price);
+      if (!Number.isFinite(price)) return false;
+
+      const foodPriceCents = Math.round(price * 100);
+      if (minPriceCents !== null && foodPriceCents < minPriceCents) {
+        return false;
+      }
+      if (maxPriceCents !== null && foodPriceCents > maxPriceCents) {
+        return false;
+      }
+      return true;
+    });
+  }, [foods, hasActivePriceFilter, isCustomer, maxPriceCents, minPriceCents]);
+
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
@@ -123,7 +199,7 @@ export default function RestaurantDetailScreen() {
 
         <View className="mt-6 flex-row items-end justify-between">
           <View className="flex-1 pr-4">
-            <Text className="text-white/80 font-semibold py-2">Food Menu</Text>
+            <Text className="text-white/80 font-semibold py-2">Menu Lists</Text>
             <Text
               className="text-white text-3xl font-extrabold tracking-tight mt-1"
               numberOfLines={2}
@@ -134,7 +210,11 @@ export default function RestaurantDetailScreen() {
           <View className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
             <View className="flex-row items-center">
               <Ionicons name="grid" size={18} color="rgba(255,255,255,0.85)" />
-              <Text className="text-white/70 ml-2">{foods.length}</Text>
+              <Text className="text-white/70 ml-2">
+                {isCustomer && hasActivePriceFilter
+                  ? `${filteredFoods.length}/${foods.length}`
+                  : foods.length}
+              </Text>
             </View>
           </View>
         </View>
@@ -167,79 +247,161 @@ export default function RestaurantDetailScreen() {
             </Text>
           </View>
         ) : (
-          <View className="mt-6 flex-row flex-wrap justify-between">
-            {foods.map((f) => {
-              const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
-              const isUnavailable = f.available === false;
+          <>
+            {isCustomer ? (
+              <View className="mt-5 bg-white/5 border border-white/10 rounded-3xl p-4">
+                <Text className="text-white/80 font-semibold">
+                  Filter by price
+                </Text>
 
-              return (
-                <Link
-                  key={f.$id}
-                  href={{
-                    pathname: "/(tabs)/home/[foodId]" as any,
-                    params: { foodId: f.$id },
-                  }}
-                  asChild
-                >
-                  <TouchableOpacity
-                    className={`w-[48%] bg-white/5 border border-white/10 rounded-3xl overflow-hidden mb-4 ${isUnavailable ? "opacity-60" : ""}`}
-                  >
-                    <View className="w-full h-28 bg-white/10">
-                      {imageUrl ? (
-                        <Image
-                          source={{ uri: imageUrl }}
-                          className="w-full h-full"
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View className="flex-1 items-center justify-center">
-                          <Ionicons
-                            name="fast-food"
-                            size={22}
-                            color="rgba(255,255,255,0.55)"
-                          />
-                        </View>
-                      )}
-
-                      {isUnavailable ? (
-                        <View className="absolute top-3 right-3 bg-slate-950/80 border border-white/10 rounded-full px-3 py-1">
-                          <Text className="text-white/80 text-xs font-semibold">
-                            Paused
-                          </Text>
-                        </View>
-                      ) : null}
+                <View className="mt-3 flex-row items-center">
+                  <View className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-row items-center">
+                    <View className="flex-1 flex-row items-center">
+                      <Text className="text-white/60 font-semibold mr-2">
+                        $
+                      </Text>
+                      <TextInput
+                        value={minPriceText}
+                        onChangeText={(t) =>
+                          setMinPriceText(t.replace(/[^0-9.]/g, ""))
+                        }
+                        keyboardType="decimal-pad"
+                        placeholder="Min"
+                        placeholderTextColor="rgba(255,255,255,0.35)"
+                        className="flex-1 text-white/90 font-semibold"
+                        accessibilityLabel="Min price"
+                      />
                     </View>
 
-                    <View className="p-4">
-                      <Text
-                        className="text-white/90 font-semibold"
-                        numberOfLines={1}
-                      >
-                        {f.name}
-                      </Text>
+                    <View className="w-px h-6 bg-white/10 mx-3" />
 
-                      <View className="flex-row items-center justify-between mt-2">
-                        <Text className="text-emerald-300 font-extrabold">
-                          {formatPrice(f.price)}
-                        </Text>
-                        <View className="bg-white/5 border border-white/10 rounded-full px-3 py-1">
-                          <Text className="text-white/70 text-xs font-semibold">
-                            {f.cookTimeMinutes} min
-                          </Text>
-                        </View>
+                    <View className="flex-1 flex-row items-center">
+                      <Text className="text-white/60 font-semibold mr-2">
+                        $
+                      </Text>
+                      <TextInput
+                        value={maxPriceText}
+                        onChangeText={(t) =>
+                          setMaxPriceText(t.replace(/[^0-9.]/g, ""))
+                        }
+                        keyboardType="decimal-pad"
+                        placeholder="Max"
+                        placeholderTextColor="rgba(255,255,255,0.35)"
+                        className="flex-1 text-white/90 font-semibold"
+                        accessibilityLabel="Max price"
+                      />
+                    </View>
+                  </View>
+
+                  {minPriceText.trim() || maxPriceText.trim() ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setMinPriceText("");
+                        setMaxPriceText("");
+                      }}
+                      className="ml-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3"
+                      accessibilityRole="button"
+                      accessibilityLabel="Clear price filter"
+                    >
+                      <Text className="text-white/80 font-semibold">Clear</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {minPriceText.trim() && !hasValidMinPrice ? (
+                  <Text className="text-white/60 mt-2">
+                    Min must be a valid number.
+                  </Text>
+                ) : null}
+
+                {maxPriceText.trim() && !hasValidMaxPrice ? (
+                  <Text className="text-white/60 mt-2">
+                    Max must be a valid number.
+                  </Text>
+                ) : null}
+
+                {isRangeInvalid ? (
+                  <Text className="text-white/60 mt-2">
+                    Min must be less than or equal to Max.
+                  </Text>
+                ) : null}
+
+                {hasActivePriceFilter && filteredFoods.length === 0 ? (
+                  <Text className="text-white/60 mt-2">
+                    No foods in this price range.
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            <View className="mt-2 flex-row flex-wrap justify-between">
+              {filteredFoods.map((f) => {
+                const imageUrl = appwriteGetFoodImageViewUrl(f.imageFileId);
+                const isUnavailable = f.available === false;
+
+                return (
+                  <Link
+                    key={f.$id}
+                    href={{
+                      pathname: "/(tabs)/home/[foodId]" as any,
+                      params: { foodId: f.$id },
+                    }}
+                    asChild
+                  >
+                    <TouchableOpacity
+                      className={`w-[48%] bg-white/5 border border-white/10 rounded-3xl overflow-hidden mb-4 ${isUnavailable ? "opacity-60" : ""}`}
+                    >
+                      <View className="w-full h-28 bg-white/10">
+                        {imageUrl ? (
+                          <Image
+                            source={{ uri: imageUrl }}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View className="flex-1 items-center justify-center">
+                            <Ionicons
+                              name="fast-food"
+                              size={22}
+                              color="rgba(255,255,255,0.55)"
+                            />
+                          </View>
+                        )}
+
+                        {isUnavailable ? (
+                          <View className="absolute top-3 right-3 bg-slate-950/80 border border-white/10 rounded-full px-3 py-1">
+                            <Text className="text-white/80 text-xs font-semibold">
+                              Paused
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
 
-                      <Text className="text-white/60 mt-2" numberOfLines={1}>
-                        {Array.isArray(f.ingredients)
-                          ? f.ingredients.join(", ")
-                          : ""}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </Link>
-              );
-            })}
-          </View>
+                      <View className="p-4">
+                        <Text
+                          className="text-white/90 font-semibold"
+                          numberOfLines={1}
+                        >
+                          {f.name}
+                        </Text>
+
+                        <View className="flex-row items-center justify-between mt-2">
+                          <Text className="text-emerald-300 font-extrabold">
+                            {formatPrice(f.price)}
+                          </Text>
+                          <View className="bg-white/5 border border-white/10 rounded-full px-3 py-1">
+                            <Text className="text-white/70 text-xs font-semibold">
+                              {f.cookTimeMinutes} min
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  </Link>
+                );
+              })}
+            </View>
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
