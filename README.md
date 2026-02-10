@@ -1,100 +1,176 @@
-# Welcome to your Expo app 👋
+# PurePlate
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+PurePlate is an **Expo (React Native) app** that helps people make safer, cleaner food choices by connecting **customers** and **restaurants**:
 
-## Get started
+- **Customers** can scan restaurant QR codes, browse menus, and get **best‑effort allergy/dislike warnings** based on ingredients.
+- **Restaurants** can create and manage their menu: **add foods (with images)**, edit details, and **pause/unpause availability**.
 
-1. Install dependencies
+Built with **Expo Router** (file-based navigation), **NativeWind/Tailwind** styling, and **Appwrite** for auth, database, and storage.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## Features
 
-   ```bash
-   npx expo start
-   ```
+### Customer
 
-## Appwrite (Signup/Login)
+- Scan restaurant QR codes (camera) and save restaurants for quick access: [app/(tabs)/scan/index.tsx](<app/(tabs)/scan/index.tsx>)
+- Browse a restaurant’s menu and optionally filter by price: [app/(tabs)/home/restaurant/[restaurantId].tsx](<app/(tabs)/home/restaurant/[restaurantId].tsx>)
+- Ingredient “health check” against saved allergy/dislike lists: [app/(tabs)/home/[foodId].tsx](<app/(tabs)/home/[foodId].tsx>)
+- Manage allergy/dislike preferences: [app/(tabs)/profile/index.tsx](<app/(tabs)/profile/index.tsx>)
 
-Create a `.env` file (see `.env.example`) and set:
+### Restaurant
 
-- `EXPO_PUBLIC_APPWRITE_ENDPOINT` (default: `https://cloud.appwrite.io/v1`)
-- `EXPO_PUBLIC_APPWRITE_PROJECT_ID`
+- Create foods with images (uploads to Appwrite Storage): [app/(tabs)/add-food/index.tsx](<app/(tabs)/add-food/index.tsx>)
+- View “Your foods” list: [app/(tabs)/home/index.tsx](<app/(tabs)/home/index.tsx>)
+- Edit food details, delete items, toggle availability: [app/(tabs)/home/[foodId].tsx](<app/(tabs)/home/[foodId].tsx>)
 
-## Appwrite (Add Food)
+### Auth + Profiles
 
-To save foods (including an image picked from the device), you need **Appwrite Database + Storage** configured.
+- Signup/login flows:
+  - [app/(auth)/signup/index.tsx](<app/(auth)/signup/index.tsx>)
+  - [app/(auth)/login/index.tsx](<app/(auth)/login/index.tsx>)
+- Auth state + profile prefs wired through: [`context.AuthProvider`](context/AuthContext.tsx) in [context/AuthContext.tsx](context/AuthContext.tsx)
+- Appwrite integration lives in: [lib/appwrite.ts](lib/appwrite.ts)
 
-### 1) Storage (food images)
+---
 
-- Create a **Storage Bucket** (e.g. `food-images`).
-- Copy the **Bucket ID** and set one of:
-  - `EXPO_PUBLIC_APPWRITE_FOOD_IMAGES_BUCKET_ID` (preferred)
-  - or keep using your existing `EXPO_PUBLIC_APPWRITE_BUCKET_ID` (fallback supported)
+## Tech Stack
 
-### 2) Database + Collection (foods)
+- **Expo + React Native**
+- **Expo Router** navigation: [app/\_layout.tsx](app/_layout.tsx), [app/(tabs)/\_layout.tsx](<app/(tabs)/_layout.tsx>)
+- **NativeWind + Tailwind**: [tailwind.config.js](tailwind.config.js), [global.css](global.css), [metro.config.js](metro.config.js)
+- **Appwrite**:
+  - Auth + prefs: [`lib.appwriteSignUp`](lib/appwrite.ts), [`lib.appwriteSignIn`](lib/appwrite.ts), [`lib.appwriteUpdatePrefs`](lib/appwrite.ts)
+  - Foods DB: [`lib.appwriteCreateFood`](lib/appwrite.ts), [`lib.appwriteUpdateFood`](lib/appwrite.ts), [`lib.appwriteListFoodsForRestaurant`](lib/appwrite.ts)
+  - Image storage: [`lib.appwriteUploadFoodImage`](lib/appwrite.ts), [`lib.appwriteGetFoodImageViewUrl`](lib/appwrite.ts)
 
-- Create a **Database** and a **Collection** for foods.
-- Set env vars:
-  - `EXPO_PUBLIC_APPWRITE_DATABASE_ID`
-  - `EXPO_PUBLIC_APPWRITE_FOODS_COLLECTION_ID`
+---
 
-Suggested attributes for the foods collection (names must match):
+## Getting Started
+
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Configure environment variables
+
+Create a `.env` file in the project root and set:
+
+```bash
+EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+EXPO_PUBLIC_APPWRITE_PROJECT_ID=YOUR_PROJECT_ID
+
+EXPO_PUBLIC_APPWRITE_DATABASE_ID=YOUR_DATABASE_ID
+EXPO_PUBLIC_APPWRITE_FOODS_COLLECTION_ID=YOUR_FOODS_COLLECTION_ID
+EXPO_PUBLIC_APPWRITE_RESTAURANTS_COLLECTION_ID=YOUR_RESTAURANTS_COLLECTION_ID
+
+# Preferred (or use EXPO_PUBLIC_APPWRITE_BUCKET_ID as fallback)
+EXPO_PUBLIC_APPWRITE_FOOD_IMAGES_BUCKET_ID=YOUR_BUCKET_ID
+```
+
+Appwrite client setup is in: [lib/appwrite.ts](lib/appwrite.ts)
+
+### 3) Run the app
+
+```bash
+npx expo start
+```
+
+---
+
+## Appwrite Setup
+
+### Storage (food images)
+
+Create a bucket for food images and allow authenticated users to **create/read**.
+
+Uploads are handled by [`lib.appwriteUploadFoodImage`](lib/appwrite.ts).  
+It attempts SDK upload first, then falls back to a REST `FormData` upload for Expo compatibility.
+
+### Database (foods collection)
+
+Create a foods collection with attributes (names must match):
 
 - `name` (string)
-- `ingredients` (string, **array enabled**)
+- `ingredients` (string array)
 - `cookTimeMinutes` (integer)
 - `price` (double)
 - `imageFileId` (string)
+- `available` (boolean)
 - `restaurantUserId` (string)
 
-Permissions (simple starting point):
+The app reads/writes these fields via:
 
-- Collection: allow authenticated users to **create/read**.
-- Bucket: allow authenticated users to **create/read**.
+- [`lib.appwriteCreateFood`](lib/appwrite.ts)
+- [`lib.appwriteUpdateFood`](lib/appwrite.ts)
+- [`lib.appwriteListFoodsForRestaurant`](lib/appwrite.ts)
 
-Once that’s set, the Add Food screen will:
+**Permissions (simple starting point)**:
 
-- Pick an image from your phone
-- Upload it to Storage
-- Save a food document in the foods collection with `imageFileId`
+- Collection: authenticated users can **create/read/update/delete**
+- Bucket: authenticated users can **create/read**
 
-Auth screens are wired to Appwrite:
+> Note: For production, restrict writes so restaurants can only modify their own foods.
 
-- Signup: `app/(auth)/signup/index.tsx`
-- Login: `app/(auth)/login/index.tsx`
+### Database (restaurants collection)
 
-In the output, you'll find options to open the app in a
+Restaurants are created/upserted when a user has role `"restaurant"` via:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [`lib.appwriteUpsertRestaurant`](lib/appwrite.ts)
+- Triggered from [`context.AuthProvider.refresh`](context/AuthContext.tsx)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## Roles & Preferences
 
-When you're ready, run:
+User role and preference lists are stored in Appwrite **account prefs**:
+
+- `role`: `"customer"` or `"restaurant"`
+- `scannedRestaurantIds`: string[]
+- `allergicIngredients`: string[]
+- `dislikedIngredients`: string[]
+
+Handled by:
+
+- [`lib.appwriteGetPrefs`](lib/appwrite.ts)
+- [`lib.appwriteUpdatePrefs`](lib/appwrite.ts)
+
+Profile UI: [app/(tabs)/profile/index.tsx](<app/(tabs)/profile/index.tsx>)
+
+---
+
+## Project Structure (high level)
+
+- `app/` — routes & screens (Expo Router)
+  - `(auth)/` — auth flow screens
+  - `(tabs)/` — main app tabs (home/scan/profile/add-food)
+- `context/` — auth state + actions: [context/AuthContext.tsx](context/AuthContext.tsx)
+- `lib/` — Appwrite + caching utilities: [lib/appwrite.ts](lib/appwrite.ts), [lib/cache.ts](lib/cache.ts)
+- `components/` — reusable UI building blocks: [components/FormField.tsx](components/FormField.tsx)
+
+---
+
+## Common Scripts
 
 ```bash
-npm run reset-project
+npx expo start
+npm run lint
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+(See [package.json](package.json) for the full list.)
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## Notes / Troubleshooting
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- If food listing fails with “Attribute not found in schema”, ensure `restaurantUserId` exists in the foods schema (used by [`lib.appwriteListFoodsForRestaurant`](lib/appwrite.ts)).
+- If food creation fails with “Invalid document structure / unknown attribute”, ensure the foods collection attributes match what the app sends (see [`lib.appwriteCreateFood`](lib/appwrite.ts)).
+- If images don’t show, confirm the bucket ID env var is set and the bucket allows reads (see [`lib.appwriteGetFoodImageViewUrl`](lib/appwrite.ts)).
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## License
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Add a license if/when you’re ready to publish.
