@@ -34,6 +34,8 @@ export type UserRole = "customer" | "restaurant";
 export type UserPrefs = {
   role?: UserRole;
   scannedRestaurantIds?: string[];
+  allergicIngredients?: string[];
+  dislikedIngredients?: string[];
 };
 
 export async function appwriteSignUp(params: {
@@ -48,7 +50,12 @@ export async function appwriteSignUp(params: {
 
   if (role) {
     await account.updatePrefs<UserPrefs>({
-      prefs: { role, scannedRestaurantIds: [] },
+      prefs: {
+        role,
+        scannedRestaurantIds: [],
+        allergicIngredients: [],
+        dislikedIngredients: [],
+      },
     });
   }
 

@@ -128,6 +128,8 @@ export default function HomeTab() {
           <Text className="text-white/60 mt-2">Loading...</Text>
         ) : !user ? (
           <Text className="text-white/60 mt-2">Not signed in.</Text>
+        ) : !prefs ? (
+          <Text className="text-white/60 mt-2">Loading...</Text>
         ) : role === "customer" ? (
           <View className="mt-2">
             <View className="flex-row items-end justify-between">
@@ -136,20 +138,6 @@ export default function HomeTab() {
                   Your spots
                 </Text>
               </View>
-              <Link href="/(tabs)/scan" asChild>
-                <TouchableOpacity className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="qr-code"
-                      size={18}
-                      color="rgba(255,255,255,0.85)"
-                    />
-                    <Text className="text-white/90 font-semibold ml-2">
-                      Scan
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </Link>
             </View>
 
             {scannedIds.length === 0 ? (

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
   CameraView,
   useCameraPermissions,
@@ -74,10 +75,6 @@ export default function ScanTab() {
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <View className="flex-1 px-8 pt-12">
-        <Text className="text-3xl font-extrabold tracking-tight text-white">
-          Scan
-        </Text>
-
         {role === "restaurant" ? (
           <Text className="text-white/60 mt-2">
             Show this QR code to customers so they can view your menu.
@@ -188,7 +185,11 @@ export default function ScanTab() {
           <View className="flex-1 items-center justify-center mt-10">
             <View className="bg-white/5 border border-white/10 rounded-3xl p-8 items-center w-full">
               <View className="w-24 h-24 rounded-full bg-emerald-500/15 border border-emerald-400/20 items-center justify-center">
-                <Text className="text-emerald-200 text-4xl font-bold">⌁</Text>
+                <Ionicons
+                  name="qr-code-outline"
+                  size={44}
+                  color="#A7F3D0" // emerald-200
+                />
               </View>
 
               <Text className="text-white/90 text-xl font-semibold mt-6">
