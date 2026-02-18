@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -14,14 +14,159 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 import {
+  appwriteCreateReview,
   appwriteDeleteFood,
+  appwriteDeleteReview,
   appwriteGetFoodById,
   appwriteGetFoodImageViewUrl,
+  appwriteListReviewsForFood,
   appwritePeekFoodById,
+  appwritePeekReviewsForFood,
   appwriteUpdateFood,
+  appwriteUpdateReview,
   FoodDoc,
+  ReviewDoc,
 } from "../../../lib/appwrite";
 
+// Star rating picker
+function StarPicker({
+  value,
+  onChange,
+  size = 28,
+  readonly = false,
+}: {
+  value: number;
+  onChange?: (v: number) => void;
+  size?: number;
+  readonly?: boolean;
+}) {
+  return (
+    <View style={{ flexDirection: "row", gap: 4 }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <TouchableOpacity
+          key={star}
+          onPress={() => !readonly && onChange?.(star)}
+          activeOpacity={readonly ? 1 : 0.7}
+          disabled={readonly}
+        >
+          <Ionicons
+            name={value >= star ? "star" : "star-outline"}
+            size={size}
+            color={value >= star ? "#fbbf24" : "rgba(255,255,255,0.25)"}
+          />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+//Average stars display
+function AverageStars({ reviews }: { reviews: ReviewDoc[] }) {
+  const avg = useMemo(() => {
+    if (reviews.length === 0) return 0;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    return sum / reviews.length;
+  }, [reviews]);
+
+  const filled = Math.round(avg);
+
+  if (reviews.length === 0) {
+    return (
+      <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+        No ratings yet
+      </Text>
+    );
+  }
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <StarPicker value={filled} size={18} readonly />
+      <Text
+        style={{ color: "#fbbf24", fontWeight: "800", fontSize: 15 }}
+      >
+        {avg.toFixed(1)}
+      </Text>
+      <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+        ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})
+      </Text>
+    </View>
+  );
+}
+
+// ─── Restaurant review card ───────────────────────────────────────────────────
+function RestaurantReviewCard({ review }: { review: ReviewDoc }) {
+  const initials = review.customerName
+    ? review.customerName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
+
+  return (
+    <View
+      style={{
+        backgroundColor: "rgba(255,255,255,0.04)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 12,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        {/* Avatar */}
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: "rgba(16,185,129,0.15)",
+            borderWidth: 1,
+            borderColor: "rgba(16,185,129,0.25)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{ color: "#6ee7b7", fontWeight: "800", fontSize: 14 }}
+          >
+            {initials}
+          </Text>
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.85)",
+              fontWeight: "700",
+              fontSize: 14,
+            }}
+          >
+            {review.customerName || "Anonymous"}
+          </Text>
+          <StarPicker value={review.rating} size={13} readonly />
+        </View>
+      </View>
+
+      {review.comment ? (
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.6)",
+            fontSize: 14,
+            lineHeight: 20,
+            marginTop: 10,
+          }}
+        >
+          {review.comment}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function FoodDetailScreen() {
   const router = useRouter();
   const { foodId } = useLocalSearchParams<{ foodId?: string | string[] }>();
@@ -45,6 +190,20 @@ export default function FoodDetailScreen() {
   const [editAvailable, setEditAvailable] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
 
+  // ── Reviews state ──────────────────────────────────────────────────────────
+  const [reviews, setReviews] = useState<ReviewDoc[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  // Customer: own review draft
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [myExistingReview, setMyExistingReview] = useState<ReviewDoc | null>(
+    null,
+  );
+  const [isEditingReview, setIsEditingReview] = useState(false);
+
+  // ── Load food ──────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
 
@@ -95,6 +254,50 @@ export default function FoodDetailScreen() {
     };
   }, [resolvedFoodId]);
 
+  // ── Load reviews ───────────────────────────────────────────────────────────
+  const loadReviews = useCallback(async () => {
+    if (!resolvedFoodId) return;
+
+    const cached = appwritePeekReviewsForFood(resolvedFoodId);
+    if (cached !== undefined) {
+      setReviews(cached);
+      if (user) {
+        const mine = cached.find((r) => r.customerId === user.$id) ?? null;
+        setMyExistingReview(mine);
+        if (mine && !isEditingReview) {
+          setMyRating(mine.rating);
+          setMyComment(mine.comment);
+        }
+      }
+      return;
+    }
+
+    try {
+      setIsLoadingReviews(true);
+      const result = await appwriteListReviewsForFood({
+        foodId: resolvedFoodId,
+      });
+      setReviews(result);
+      if (user) {
+        const mine = result.find((r) => r.customerId === user.$id) ?? null;
+        setMyExistingReview(mine);
+        if (mine && !isEditingReview) {
+          setMyRating(mine.rating);
+          setMyComment(mine.comment);
+        }
+      }
+    } catch (err: any) {
+      console.warn("Unable to load reviews:", err?.message ?? err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, [resolvedFoodId, user, isEditingReview]);
+
+  useEffect(() => {
+    void loadReviews();
+  }, [loadReviews]);
+
+  // ── Edit food helpers ──────────────────────────────────────────────────────
   const canManageFood = useMemo(() => {
     if (!user) return false;
     if (role !== "restaurant") return false;
@@ -128,17 +331,13 @@ export default function FoodDetailScreen() {
   };
 
   const saveEdits = async () => {
-    if (!user) return;
-    if (!food) return;
-    if (!canManageFood) return;
-    if (isMutating) return;
+    if (!user || !food || !canManageFood || isMutating) return;
 
     const trimmedName = editName.trim();
     const ingredients = editIngredientsText
       .split(",")
       .map((x) => x.trim())
       .filter(Boolean);
-
     const minutes = Number(editCookTimeMinutes);
     const parsedPrice = Number(editPrice);
 
@@ -147,10 +346,7 @@ export default function FoodDetailScreen() {
       return;
     }
     if (ingredients.length === 0) {
-      Alert.alert(
-        "Missing info",
-        "Please enter ingredients (comma-separated).",
-      );
+      Alert.alert("Missing info", "Please enter ingredients (comma-separated).");
       return;
     }
     if (!Number.isFinite(minutes) || minutes <= 0) {
@@ -175,7 +371,6 @@ export default function FoodDetailScreen() {
           available: editAvailable,
         },
       });
-
       setFood(updated);
       setIsEditing(false);
     } catch (err: any) {
@@ -190,10 +385,7 @@ export default function FoodDetailScreen() {
   };
 
   const toggleAvailability = async (nextAvailable: boolean) => {
-    if (!user) return;
-    if (!food) return;
-    if (!canManageFood) return;
-    if (isMutating) return;
+    if (!user || !food || !canManageFood || isMutating) return;
 
     const previous = editAvailable;
     setEditAvailable(nextAvailable);
@@ -232,10 +424,7 @@ export default function FoodDetailScreen() {
   };
 
   const deleteFood = async () => {
-    if (!user) return;
-    if (!food) return;
-    if (!canManageFood) return;
-    if (isMutating) return;
+    if (!user || !food || !canManageFood || isMutating) return;
 
     Alert.alert(
       "Delete food?",
@@ -265,9 +454,92 @@ export default function FoodDetailScreen() {
     );
   };
 
-  const imageUrl = useMemo(() => {
-    return food ? appwriteGetFoodImageViewUrl(food.imageFileId) : null;
-  }, [food]);
+  // ── Review submit / update ─────────────────────────────────────────────────
+  const submitReview = async () => {
+    if (!user || !food || isSubmittingReview) return;
+    if (myRating === 0) {
+      Alert.alert("Rating required", "Please select a star rating.");
+      return;
+    }
+
+    try {
+      setIsSubmittingReview(true);
+
+      if (myExistingReview) {
+        // Update existing review
+        const updated = await appwriteUpdateReview({
+          reviewId: myExistingReview.$id,
+          foodId: food.$id,
+          rating: myRating,
+          comment: myComment.trim(),
+        });
+        setMyExistingReview(updated);
+        setReviews((prev) =>
+          prev.map((r) => (r.$id === updated.$id ? updated : r)),
+        );
+      } else {
+        // Create new review
+        const created = await appwriteCreateReview({
+          foodId: food.$id,
+          restaurantUserId: food.restaurantUserId,
+          customerId: user.$id,
+          customerName: user.name || "Anonymous",
+          rating: myRating,
+          comment: myComment.trim(),
+        });
+        setMyExistingReview(created);
+        setReviews((prev) => [created, ...prev]);
+      }
+
+      setIsEditingReview(false);
+    } catch (err: any) {
+      const message =
+        typeof err?.message === "string"
+          ? err.message
+          : "Unable to submit review. Please try again.";
+      Alert.alert("Review failed", message);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const deleteMyReview = async () => {
+    if (!user || !food || !myExistingReview || isSubmittingReview) return;
+
+    Alert.alert("Delete review?", "This will remove your review.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setIsSubmittingReview(true);
+            await appwriteDeleteReview({
+              reviewId: myExistingReview.$id,
+              foodId: food.$id,
+            });
+            setReviews((prev) =>
+              prev.filter((r) => r.$id !== myExistingReview.$id),
+            );
+            setMyExistingReview(null);
+            setMyRating(0);
+            setMyComment("");
+            setIsEditingReview(false);
+          } catch (err: any) {
+            Alert.alert("Error", "Unable to delete review.");
+          } finally {
+            setIsSubmittingReview(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const imageUrl = useMemo(
+    () => (food ? appwriteGetFoodImageViewUrl(food.imageFileId) : null),
+    [food],
+  );
 
   const formatPrice = (value: unknown) => {
     const n = typeof value === "number" ? value : Number(value);
@@ -275,11 +547,13 @@ export default function FoodDetailScreen() {
     return `$${n.toFixed(2)}`;
   };
 
-  const ingredientsList = useMemo(() => {
-    return Array.isArray(food?.ingredients)
-      ? food?.ingredients.filter(Boolean)
-      : [];
-  }, [food?.ingredients]);
+  const ingredientsList = useMemo(
+    () =>
+      Array.isArray(food?.ingredients)
+        ? food?.ingredients.filter(Boolean)
+        : [],
+    [food?.ingredients],
+  );
 
   const allergicPrefs = useMemo(() => {
     const list = prefs?.allergicIngredients;
@@ -338,6 +612,7 @@ export default function FoodDetailScreen() {
     };
   }, [allergicPrefs, dislikedPrefs, ingredientsList, role]);
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
@@ -368,6 +643,7 @@ export default function FoodDetailScreen() {
           <Text className="text-white/60 mt-2">Food not found.</Text>
         ) : (
           <View>
+            {/* ── Hero image ──────────────────────────────────────────── */}
             <View className="w-full h-64 rounded-3xl overflow-hidden bg-white/10 border border-white/10 mt-6">
               {imageUrl ? (
                 <Image
@@ -397,6 +673,7 @@ export default function FoodDetailScreen() {
               ) : null}
             </View>
 
+            {/* ── Title row ───────────────────────────────────────────── */}
             <View className="flex-row items-center justify-between mt-6">
               <Text
                 className="text-3xl font-extrabold tracking-tight text-white flex-1 pr-4"
@@ -446,6 +723,7 @@ export default function FoodDetailScreen() {
               ) : null}
             </View>
 
+            {/* ── Price / cook time ────────────────────────────────────── */}
             <View className="flex-row items-center justify-between mt-3">
               <Text className="text-emerald-300 font-extrabold text-lg">
                 {formatPrice(food.price)}
@@ -457,6 +735,12 @@ export default function FoodDetailScreen() {
               </View>
             </View>
 
+            {/* ── Average rating (always visible) ─────────────────────── */}
+            <View className="mt-4">
+              <AverageStars reviews={reviews} />
+            </View>
+
+            {/* ── Availability (restaurant only) ───────────────────────── */}
             {canManageFood ? (
               <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
                 <View className="flex-row items-center justify-between">
@@ -487,11 +771,10 @@ export default function FoodDetailScreen() {
               </View>
             ) : null}
 
+            {/* ── Edit form (restaurant only) ──────────────────────────── */}
             {isEditing ? (
               <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
-                <Text className="text-white/90 font-semibold">
-                  Edit details
-                </Text>
+                <Text className="text-white/90 font-semibold">Edit details</Text>
                 <Text className="text-white/60 mt-2">
                   Update the item name, ingredients, cook time, and price.
                 </Text>
@@ -588,6 +871,7 @@ export default function FoodDetailScreen() {
               </View>
             ) : null}
 
+            {/* ── Ingredients / health check ───────────────────────────── */}
             {canManageFood ? (
               <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
                 <Text className="text-white/90 font-semibold">Ingredients</Text>
@@ -690,7 +974,7 @@ export default function FoodDetailScreen() {
                       No conflicts found with your saved allergies/dislikes.
                     </Text>
                     <Text className="text-white/60 mt-2">
-                      You’re good to go — enjoy a delicious, worry-free bite.
+                      You're good to go — enjoy a delicious, worry-free bite.
                     </Text>
                     {allergicPrefs.length === 0 &&
                     dislikedPrefs.length === 0 ? (
@@ -710,6 +994,294 @@ export default function FoodDetailScreen() {
                 </Text>
               </View>
             )}
+
+            {/* ════════════════════════════════════════════════════════════
+                REVIEWS SECTION
+            ════════════════════════════════════════════════════════════ */}
+
+            {/* ── Customer: submit / edit own review ──────────────────── */}
+            {role === "customer" && user ? (
+              <View
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.08)",
+                  borderRadius: 24,
+                  padding: 20,
+                  marginTop: 24,
+                }}
+              >
+                {/* Header */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "rgba(255,255,255,0.9)",
+                      fontWeight: "700",
+                      fontSize: 16,
+                    }}
+                  >
+                    {myExistingReview && !isEditingReview
+                      ? "Your review"
+                      : "Rate this dish"}
+                  </Text>
+
+                  {myExistingReview && !isEditingReview ? (
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setMyRating(myExistingReview.rating);
+                          setMyComment(myExistingReview.comment);
+                          setIsEditingReview(true);
+                        }}
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.07)",
+                          borderWidth: 1,
+                          borderColor: "rgba(255,255,255,0.1)",
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "rgba(255,255,255,0.7)",
+                            fontSize: 13,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Edit
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => void deleteMyReview()}
+                        disabled={isSubmittingReview}
+                        style={{
+                          backgroundColor: "rgba(239,68,68,0.08)",
+                          borderWidth: 1,
+                          borderColor: "rgba(239,68,68,0.2)",
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "rgba(239,68,68,0.8)",
+                            fontSize: 13,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Delete
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Show submitted review (read-only) */}
+                {myExistingReview && !isEditingReview ? (
+                  <View>
+                    <StarPicker value={myExistingReview.rating} size={24} readonly />
+                    {myExistingReview.comment ? (
+                      <Text
+                        style={{
+                          color: "rgba(255,255,255,0.6)",
+                          fontSize: 14,
+                          lineHeight: 20,
+                          marginTop: 10,
+                        }}
+                      >
+                        {myExistingReview.comment}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  /* Review form */
+                  <View>
+                    {/* Stars */}
+                    <StarPicker value={myRating} onChange={setMyRating} size={32} />
+
+                    {/* Comment input */}
+                    <TextInput
+                      value={myComment}
+                      onChangeText={setMyComment}
+                      placeholder="Share your thoughts (optional)..."
+                      placeholderTextColor="rgba(255,255,255,0.25)"
+                      multiline
+                      numberOfLines={3}
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.06)",
+                        borderWidth: 1,
+                        borderColor: "rgba(255,255,255,0.1)",
+                        borderRadius: 16,
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        color: "rgba(255,255,255,0.9)",
+                        fontSize: 14,
+                        lineHeight: 20,
+                        marginTop: 16,
+                        minHeight: 80,
+                        textAlignVertical: "top",
+                      }}
+                    />
+
+                    {/* Buttons */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 10,
+                        marginTop: 14,
+                      }}
+                    >
+                      {isEditingReview ? (
+                        <TouchableOpacity
+                          onPress={() => setIsEditingReview(false)}
+                          style={{
+                            flex: 1,
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            borderWidth: 1,
+                            borderColor: "rgba(255,255,255,0.1)",
+                            borderRadius: 16,
+                            paddingVertical: 14,
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "rgba(255,255,255,0.7)",
+                              fontWeight: "700",
+                            }}
+                          >
+                            Cancel
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+
+                      <TouchableOpacity
+                        onPress={() => void submitReview()}
+                        disabled={isSubmittingReview || myRating === 0}
+                        style={{
+                          flex: 1,
+                          backgroundColor:
+                            myRating === 0
+                              ? "rgba(16,185,129,0.3)"
+                              : "#10b981",
+                          borderRadius: 16,
+                          paddingVertical: 14,
+                          alignItems: "center",
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={{
+                            color:
+                              myRating === 0
+                                ? "rgba(255,255,255,0.4)"
+                                : "#ffffff",
+                            fontWeight: "800",
+                            fontSize: 15,
+                          }}
+                        >
+                          {isSubmittingReview
+                            ? "Submitting..."
+                            : myExistingReview
+                              ? "Update review"
+                              : "Submit review"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ) : null}
+
+            {/* ── Restaurant: all reviews list ─────────────────────────── */}
+            {role === "restaurant" && canManageFood ? (
+              <View style={{ marginTop: 24 }}>
+                {/* Section header */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 14,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "rgba(255,255,255,0.9)",
+                      fontWeight: "700",
+                      fontSize: 16,
+                    }}
+                  >
+                    Customer reviews
+                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: "rgba(16,185,129,0.1)",
+                      borderWidth: 1,
+                      borderColor: "rgba(16,185,129,0.2)",
+                      borderRadius: 12,
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#6ee7b7",
+                        fontWeight: "700",
+                        fontSize: 13,
+                      }}
+                    >
+                      {reviews.length}
+                    </Text>
+                  </View>
+                </View>
+
+                {isLoadingReviews ? (
+                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
+                    Loading reviews...
+                  </Text>
+                ) : reviews.length === 0 ? (
+                  <View
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.03)",
+                      borderWidth: 1,
+                      borderColor: "rgba(255,255,255,0.07)",
+                      borderRadius: 20,
+                      padding: 24,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name="chatbubble-outline"
+                      size={32}
+                      color="rgba(255,255,255,0.2)"
+                    />
+                    <Text
+                      style={{
+                        color: "rgba(255,255,255,0.4)",
+                        marginTop: 10,
+                        fontSize: 14,
+                      }}
+                    >
+                      No reviews yet
+                    </Text>
+                  </View>
+                ) : (
+                  reviews.map((review) => (
+                    <RestaurantReviewCard key={review.$id} review={review} />
+                  ))
+                )}
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>

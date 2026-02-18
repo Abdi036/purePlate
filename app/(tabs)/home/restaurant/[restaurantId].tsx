@@ -16,6 +16,7 @@ import {
   appwriteGetFoodImageViewUrl,
   appwriteListFoodsForRestaurant,
   appwriteListRestaurantsByIds,
+  appwriteListReviewsForFood,
   appwritePeekFoodsForRestaurant,
   appwritePeekRestaurantsByIds,
   FoodDoc,
@@ -70,10 +71,12 @@ function FoodCard({
   food,
   formatPrice,
   href,
+  avgRating,
 }: {
   food: FoodDoc;
   formatPrice: (v: unknown) => string;
   href: any;
+  avgRating: number | null;
 }) {
   const imageUrl = appwriteGetFoodImageViewUrl(food.imageFileId);
   const isUnavailable = food.available === false;
@@ -121,12 +124,14 @@ function FoodCard({
             >
               {food.name}
             </Text>
-            <View className="flex-row items-center mt-1">
-              <Ionicons name="star" size={12} color="#fbbf24" />
-              <Text className="text-white/60 text-xs font-medium ml-1">
-                4.5
-              </Text>
-            </View>
+            {avgRating !== null ? (
+              <View className="flex-row items-center mt-1">
+                <Ionicons name="star" size={12} color="#fbbf24" />
+                <Text className="text-white/60 text-xs font-medium ml-1">
+                  {avgRating.toFixed(1)}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <View className="flex-row items-center justify-between mt-2">
@@ -179,6 +184,9 @@ export default function RestaurantDetailScreen() {
   const [foods, setFoods] = useState<FoodDoc[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // foodId -> average rating (null = not yet loaded)
+  const [reviewsMap, setReviewsMap] = useState<Record<string, number | null>>({});
 
   const { prefs } = useAuth();
   const isCustomer = prefs?.role === "customer";
@@ -259,6 +267,25 @@ export default function RestaurantDetailScreen() {
         if (!mounted) return;
         setRestaurant(restaurantsResult[0] ?? null);
         setFoods(foodsResult);
+
+        // Fetch reviews for all foods in parallel to compute real avg ratings
+        const reviewResults = await Promise.allSettled(
+          foodsResult.map((f) =>
+            appwriteListReviewsForFood({ foodId: f.$id })
+          )
+        );
+        if (!mounted) return;
+        const map: Record<string, number | null> = {};
+        foodsResult.forEach((f, i) => {
+          const res = reviewResults[i];
+          if (res?.status === "fulfilled" && res.value.length > 0) {
+            const sum = res.value.reduce((acc, r) => acc + r.rating, 0);
+            map[f.$id] = sum / res.value.length;
+          } else {
+            map[f.$id] = null;
+          }
+        });
+        setReviewsMap(map);
       } catch (err: any) {
         if (!mounted) return;
         const message = typeof err?.message === "string" ? err.message : "";
@@ -838,6 +865,7 @@ export default function RestaurantDetailScreen() {
                   key={f.$id}
                   food={f}
                   formatPrice={formatPrice}
+                  avgRating={reviewsMap[f.$id] ?? null}
                   href={{
                     pathname: "/(tabs)/home/[foodId]" as any,
                     params: { foodId: f.$id },

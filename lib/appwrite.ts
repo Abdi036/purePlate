@@ -1,11 +1,11 @@
 import {
-  Account,
-  Client,
-  Databases,
-  ID,
-  Models,
-  Query,
-  Storage,
+    Account,
+    Client,
+    Databases,
+    ID,
+    Models,
+    Query,
+    Storage,
 } from "appwrite";
 import { TTLCache } from "./cache";
 
@@ -24,6 +24,8 @@ const restaurantsCollectionId =
   process.env.EXPO_PUBLIC_APPWRITE_RESTAURANTS_COLLECTION_ID ?? "";
 const foodsCollectionId =
   process.env.EXPO_PUBLIC_APPWRITE_FOODS_COLLECTION_ID ?? "";
+const reviewsCollectionId =
+  process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID ?? "reviews";
 
 const foodImagesBucketId =
   process.env.EXPO_PUBLIC_APPWRITE_FOOD_IMAGES_BUCKET_ID ??
@@ -492,4 +494,118 @@ export async function appwriteDeleteFood(params: {
 
   foodsForRestaurantCache.delete(`foodsForRestaurant:${userId}`);
   foodByIdCache.delete(`foodById:${foodId}`);
+}
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+export type ReviewDoc = Models.Document & {
+  foodId: string;
+  restaurantUserId: string;
+  customerId: string;
+  customerName: string;
+  rating: number; // 1–5
+  comment: string;
+};
+
+const REVIEWS_TTL_MS = 2 * 60 * 1000;
+const reviewsForFoodCache = new TTLCache<ReviewDoc[]>();
+
+export function appwritePeekReviewsForFood(
+  foodId: string,
+): ReviewDoc[] | undefined {
+  if (!foodId) return undefined;
+  return reviewsForFoodCache.get(`reviewsForFood:${foodId}`);
+}
+
+export async function appwriteListReviewsForFood(params: {
+  foodId: string;
+}): Promise<ReviewDoc[]> {
+  if (!databaseId || !reviewsCollectionId) return [];
+  const { foodId } = params;
+  if (!foodId) return [];
+
+  const cacheKey = `reviewsForFood:${foodId}`;
+  const cached = reviewsForFoodCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  try {
+    const result = await databases.listDocuments<ReviewDoc>(
+      databaseId,
+      reviewsCollectionId,
+      [Query.equal("foodId", foodId), Query.orderDesc("$createdAt")],
+    );
+    const docs = result.documents;
+    reviewsForFoodCache.set(cacheKey, docs, REVIEWS_TTL_MS);
+    return docs;
+  } catch (err: any) {
+    const message = typeof err?.message === "string" ? err.message : "";
+    if (
+      message.includes("Collection with the requested ID could not be found") ||
+      message.includes("not found")
+    ) {
+      // Reviews collection not yet created — return empty gracefully.
+      return [];
+    }
+    throw err;
+  }
+}
+
+export async function appwriteCreateReview(params: {
+  foodId: string;
+  restaurantUserId: string;
+  customerId: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+}): Promise<ReviewDoc> {
+  if (!databaseId || !reviewsCollectionId) {
+    throw new Error(
+      "Missing Appwrite DB config for reviews. Set EXPO_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID.",
+    );
+  }
+  const { foodId, restaurantUserId, customerId, customerName, rating, comment } =
+    params;
+
+  const created = await databases.createDocument<ReviewDoc>(
+    databaseId,
+    reviewsCollectionId,
+    ID.unique(),
+    { foodId, restaurantUserId, customerId, customerName, rating, comment },
+  );
+
+  // Bust cache so next fetch is fresh.
+  reviewsForFoodCache.delete(`reviewsForFood:${foodId}`);
+  return created;
+}
+
+export async function appwriteUpdateReview(params: {
+  reviewId: string;
+  foodId: string;
+  rating: number;
+  comment: string;
+}): Promise<ReviewDoc> {
+  if (!databaseId || !reviewsCollectionId) {
+    throw new Error("Missing Appwrite DB config for reviews.");
+  }
+  const { reviewId, foodId, rating, comment } = params;
+
+  const updated = await databases.updateDocument<ReviewDoc>(
+    databaseId,
+    reviewsCollectionId,
+    reviewId,
+    { rating, comment },
+  );
+
+  reviewsForFoodCache.delete(`reviewsForFood:${foodId}`);
+  return updated;
+}
+
+export async function appwriteDeleteReview(params: {
+  reviewId: string;
+  foodId: string;
+}): Promise<void> {
+  if (!databaseId || !reviewsCollectionId) return;
+  const { reviewId, foodId } = params;
+  await databases.deleteDocument(databaseId, reviewsCollectionId, reviewId);
+  reviewsForFoodCache.delete(`reviewsForFood:${foodId}`);
 }
