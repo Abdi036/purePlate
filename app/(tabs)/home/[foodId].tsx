@@ -81,9 +81,7 @@ function AverageStars({ reviews }: { reviews: ReviewDoc[] }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
       <StarPicker value={filled} size={18} readonly />
-      <Text
-        style={{ color: "#fbbf24", fontWeight: "800", fontSize: 15 }}
-      >
+      <Text style={{ color: "#fbbf24", fontWeight: "800", fontSize: 15 }}>
         {avg.toFixed(1)}
       </Text>
       <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
@@ -129,9 +127,7 @@ function RestaurantReviewCard({ review }: { review: ReviewDoc }) {
             justifyContent: "center",
           }}
         >
-          <Text
-            style={{ color: "#6ee7b7", fontWeight: "800", fontSize: 14 }}
-          >
+          <Text style={{ color: "#6ee7b7", fontWeight: "800", fontSize: 14 }}>
             {initials}
           </Text>
         </View>
@@ -203,7 +199,6 @@ export default function FoodDetailScreen() {
   );
   const [isEditingReview, setIsEditingReview] = useState(false);
 
-  // ── Load food ──────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
 
@@ -254,7 +249,6 @@ export default function FoodDetailScreen() {
     };
   }, [resolvedFoodId]);
 
-  // ── Load reviews ───────────────────────────────────────────────────────────
   const loadReviews = useCallback(async () => {
     if (!resolvedFoodId) return;
 
@@ -297,7 +291,6 @@ export default function FoodDetailScreen() {
     void loadReviews();
   }, [loadReviews]);
 
-  // ── Edit food helpers ──────────────────────────────────────────────────────
   const canManageFood = useMemo(() => {
     if (!user) return false;
     if (role !== "restaurant") return false;
@@ -346,7 +339,10 @@ export default function FoodDetailScreen() {
       return;
     }
     if (ingredients.length === 0) {
-      Alert.alert("Missing info", "Please enter ingredients (comma-separated).");
+      Alert.alert(
+        "Missing info",
+        "Please enter ingredients (comma-separated).",
+      );
       return;
     }
     if (!Number.isFinite(minutes) || minutes <= 0) {
@@ -454,7 +450,6 @@ export default function FoodDetailScreen() {
     );
   };
 
-  // ── Review submit / update ─────────────────────────────────────────────────
   const submitReview = async () => {
     if (!user || !food || isSubmittingReview) return;
     if (myRating === 0) {
@@ -526,7 +521,7 @@ export default function FoodDetailScreen() {
             setMyComment("");
             setIsEditingReview(false);
           } catch (err: any) {
-            Alert.alert("Error", "Unable to delete review.");
+            Alert.alert("Error", "Unable to delete review.", err);
           } finally {
             setIsSubmittingReview(false);
           }
@@ -535,7 +530,6 @@ export default function FoodDetailScreen() {
     ]);
   };
 
-  // ── Derived ────────────────────────────────────────────────────────────────
   const imageUrl = useMemo(
     () => (food ? appwriteGetFoodImageViewUrl(food.imageFileId) : null),
     [food],
@@ -549,9 +543,7 @@ export default function FoodDetailScreen() {
 
   const ingredientsList = useMemo(
     () =>
-      Array.isArray(food?.ingredients)
-        ? food?.ingredients.filter(Boolean)
-        : [],
+      Array.isArray(food?.ingredients) ? food?.ingredients.filter(Boolean) : [],
     [food?.ingredients],
   );
 
@@ -612,7 +604,6 @@ export default function FoodDetailScreen() {
     };
   }, [allergicPrefs, dislikedPrefs, ingredientsList, role]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
@@ -633,7 +624,9 @@ export default function FoodDetailScreen() {
         </Link>
 
         {isLoading ? (
-          <Text className="text-white/60 mt-2">Loading...</Text>
+          <View className="flex items-center justify-center">
+            <Text className="text-white/60 mt-2">Loading...</Text>
+          </View>
         ) : errorMessage ? (
           <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-2">
             <Text className="text-white/90 font-semibold">Unable to open</Text>
@@ -774,7 +767,9 @@ export default function FoodDetailScreen() {
             {/* ── Edit form (restaurant only) ──────────────────────────── */}
             {isEditing ? (
               <View className="bg-white/5 border border-white/10 rounded-3xl p-5 mt-6">
-                <Text className="text-white/90 font-semibold">Edit details</Text>
+                <Text className="text-white/90 font-semibold">
+                  Edit details
+                </Text>
                 <Text className="text-white/60 mt-2">
                   Update the item name, ingredients, cook time, and price.
                 </Text>
@@ -974,7 +969,8 @@ export default function FoodDetailScreen() {
                       No conflicts found with your saved allergies/dislikes.
                     </Text>
                     <Text className="text-white/60 mt-2">
-                      You're good to go — enjoy a delicious, worry-free bite.
+                      You&apos;re good to go — enjoy a delicious, worry-free
+                      bite.
                     </Text>
                     {allergicPrefs.length === 0 &&
                     dislikedPrefs.length === 0 ? (
@@ -1088,7 +1084,11 @@ export default function FoodDetailScreen() {
                 {/* Show submitted review (read-only) */}
                 {myExistingReview && !isEditingReview ? (
                   <View>
-                    <StarPicker value={myExistingReview.rating} size={24} readonly />
+                    <StarPicker
+                      value={myExistingReview.rating}
+                      size={24}
+                      readonly
+                    />
                     {myExistingReview.comment ? (
                       <Text
                         style={{
@@ -1106,7 +1106,11 @@ export default function FoodDetailScreen() {
                   /* Review form */
                   <View>
                     {/* Stars */}
-                    <StarPicker value={myRating} onChange={setMyRating} size={32} />
+                    <StarPicker
+                      value={myRating}
+                      onChange={setMyRating}
+                      size={32}
+                    />
 
                     {/* Comment input */}
                     <TextInput
@@ -1170,9 +1174,7 @@ export default function FoodDetailScreen() {
                         style={{
                           flex: 1,
                           backgroundColor:
-                            myRating === 0
-                              ? "rgba(16,185,129,0.3)"
-                              : "#10b981",
+                            myRating === 0 ? "rgba(16,185,129,0.3)" : "#10b981",
                           borderRadius: 16,
                           paddingVertical: 14,
                           alignItems: "center",
@@ -1246,7 +1248,9 @@ export default function FoodDetailScreen() {
                 </View>
 
                 {isLoadingReviews ? (
-                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
+                  <Text
+                    style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}
+                  >
                     Loading reviews...
                   </Text>
                 ) : reviews.length === 0 ? (

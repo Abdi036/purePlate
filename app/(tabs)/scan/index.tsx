@@ -4,8 +4,10 @@ import {
   useCameraPermissions,
   type BarcodeScanningResult,
 } from "expo-camera";
+import * as Print from "expo-print";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import * as Sharing from "expo-sharing";
+import React, { useMemo, useRef, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,9 +30,11 @@ export default function ScanTab() {
   const role = prefs?.role;
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const qrRef = useRef<any>(null);
 
   const scannedIds = useMemo(() => prefs?.scannedRestaurantIds ?? [], [prefs]);
 
@@ -72,6 +76,66 @@ export default function ScanTab() {
     await saveRestaurantId(result.data);
   };
 
+  const saveQrAsPdf = async () => {
+    if (!qrRef.current) {
+      Alert.alert("Error", "QR code not ready. Please try again.");
+      return;
+    }
+    setIsSavingPdf(true);
+    try {
+      qrRef.current.toDataURL(async (dataUrl: string) => {
+        try {
+          const html = `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8" />
+                <style>
+                  body {
+                    margin: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    background: #fff;
+                    font-family: sans-serif;
+                  }
+                  h1 { font-size: 28px; margin-bottom: 8px; color: #111; }
+                  p { font-size: 16px; color: #555; margin-bottom: 32px; }
+                  img { width: 280px; height: 280px; }
+                </style>
+              </head>
+              <body>
+                <h1>PurePlate Restaurant QR</h1>
+                <p>Scan to view our menu</p>
+                <img src="data:image/png;base64,${dataUrl}" />
+              </body>
+            </html>
+          `;
+          const { uri } = await Print.printToFileAsync({ html });
+          const canShare = await Sharing.isAvailableAsync();
+          if (canShare) {
+            await Sharing.shareAsync(uri, {
+              mimeType: "application/pdf",
+              dialogTitle: "Save QR Code PDF",
+              UTI: "com.adobe.pdf",
+            });
+          } else {
+            Alert.alert("Saved", `PDF saved to:\n${uri}`);
+          }
+        } catch (err: any) {
+          Alert.alert("Error", err?.message ?? "Failed to generate PDF.");
+        } finally {
+          setIsSavingPdf(false);
+        }
+      });
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? "Failed to capture QR code.");
+      setIsSavingPdf(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <View className="flex-1 px-8 pt-12">
@@ -96,6 +160,7 @@ export default function ScanTab() {
                   <QRCode
                     value={`${RESTAURANT_QR_PREFIX}${user.$id}`}
                     size={220}
+                    getRef={(ref) => (qrRef.current = ref)}
                   />
                 </View>
 
@@ -105,6 +170,18 @@ export default function ScanTab() {
                 <Text className="text-white/60 mt-2 text-center">
                   Customers scan this to view your menu
                 </Text>
+
+                <TouchableOpacity
+                  className="bg-emerald-500 py-4 rounded-2xl mt-5 w-full flex-row items-center justify-center gap-2"
+                  onPress={saveQrAsPdf}
+                  disabled={isSavingPdf}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="download-outline" size={20} color="#0f172a" />
+                  <Text className="text-slate-950 font-bold text-base">
+                    {isSavingPdf ? "Saving…" : "Save as PDF"}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>

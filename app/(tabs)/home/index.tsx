@@ -375,14 +375,6 @@ export default function HomeTab() {
                             </View>
                           </View>
 
-                          <Text
-                            className="text-white/60 mt-2"
-                            numberOfLines={1}
-                          >
-                            {Array.isArray(f.ingredients)
-                              ? f.ingredients.join(", ")
-                              : ""}
-                          </Text>
                         </View>
                       </TouchableOpacity>
                     );
